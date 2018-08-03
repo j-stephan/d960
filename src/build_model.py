@@ -10,13 +10,11 @@ from sklearn.model_selection import train_test_split
 #from keras import backend as K
 #K.tensorflow_backend._get_available_gpus()
 
-data_input = "orig"
+data_input = "data"
 
 image_paths = [data_input + "/{0}".format(f)
                 for f in os.listdir(data_input)
                     if os.path.isfile(os.path.join(data_input, f))]
-
-grey_output = "greyscale"
 
 data = []
 labels = []
@@ -42,16 +40,14 @@ for image_path in image_paths:
     grey = grey.astype('float32')
     grey /= 255
 
-    # Save image
-    if not os.path.exists(grey_output):
-        os.makedirs(grey_output)
-
-    out_name = grey_output + "/" + name + ".tif"
-    cv2.imwrite(out_name, grey)
-
     label = name[0]
     data.append(grey)
     labels.append(label)
+
+alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 # Create numpy arrays
 data = numpy.array(data)
@@ -62,7 +58,7 @@ labels = numpy.array(labels)
                                         test_size=0.25, random_state=0)
 
 # Convert labels into one-hot encodings for Keras
-lb = LabelBinarizer().fit(Y_train)
+lb = LabelBinarizer().fit(alphabet)
 Y_train = lb.transform(Y_train)
 Y_test = lb.transform(Y_test)
 
@@ -141,19 +137,22 @@ seq = keras.layers.Reshape((9, 512))(conv)
 
 # Upper LSTM layer
 print("Adding bidirectional LSTM layer")
-lstm_a = keras.layers.LSTM(units = 512)(seq)
+lstm_a = keras.layers.LSTM(units = 512, return_sequences = True)(seq)
 
 # Lower LSTM layer
-lstm_b = keras.layers.LSTM(units = 512, go_backwards = True)(seq)
+lstm_b = keras.layers.LSTM(units = 512, go_backwards = True,
+                           return_sequences = True)(seq)
 
 # Add
 result = keras.layers.Add()([lstm_a, lstm_b])
 
-keras.models.Model(inputs = input_data, outputs = result).summary()
+result = keras.layers.Flatten()(result)
+
 
 # transform RNN output to character activation
+# 52 output units: 52 letters -> (upper/lowercase)
 print("Adding activation")
-act = keras.layers.Dense(45, kernel_initializer = "he_normal")(result)
+act = keras.layers.Dense(52, kernel_initializer = "he_normal")(result)
 y_pred = keras.layers.Activation("softmax")(act)
 
 model = keras.models.Model(inputs=input_data, outputs=y_pred)
@@ -169,7 +168,7 @@ print("Fitting model")
 model.fit(X_train, Y_train,
           validation_data = (X_test, Y_test),
           batch_size = 32,
-          epochs = 100, verbose = 1)
+          epochs = 20, verbose = 1)
 
 # Evaluate
 print("Evaluating model")
