@@ -1,16 +1,18 @@
 import cv2
-import keras
-import numpy
+import numpy as np
 import os
 import sys
+
+from keras import backend as K
+from keras.layers import Activation, Add, BatchNormalization, Bidirectional
+from keras.layers import Conv2D, Dense, Input, LSTM, MaxPooling2D, Reshape
+from keras.layers import TimeDistributed
+from keras.models import Model, Sequential
 
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 
-#from keras import backend as K
-#K.tensorflow_backend._get_available_gpus()
-
-data_input = "data"
+data_input = "wl1"
 
 image_paths = [data_input + "/{0}".format(f)
                 for f in os.listdir(data_input)
@@ -50,8 +52,8 @@ alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
             'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
 # Create numpy arrays
-data = numpy.array(data)
-labels = numpy.array(labels)
+data = np.array(data)
+labels = np.array(labels)
 
 # Create training and test data
 (X_train, X_test, Y_train, Y_test) = train_test_split(data, labels,
@@ -66,96 +68,71 @@ X_train = X_train.reshape(X_train.shape[0], 64, 64, 1)
 X_test = X_test.reshape(X_test.shape[0], 64, 64, 1)
 
 
-# Input layer
-input_data = keras.layers.Input(shape = (64, 64, 1), dtype = 'float32')
+model = Sequential()
 
 # First convolutional layer
 print("Adding first Conv2D")
-conv = keras.layers.Conv2D(filters = 64,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(input_data)
-conv = keras.layers.MaxPooling2D(pool_size = (2, 2), strides = (2, 2))(conv)
+model.add(Conv2D(filters = 64, kernel_size = (3, 3), padding = "same",
+                 activation = "relu", input_shape = (64, 64, 1)))
+model.add(MaxPooling2D(pool_size = (2, 2), strides = (2, 2)))
 
 # Second convolutional layer
 print("Adding second Conv2D")
-conv = keras.layers.Conv2D(filters = 128,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(conv)
-conv = keras.layers.MaxPooling2D(pool_size = (2, 2), strides = (2, 2))(conv)
+model.add(Conv2D(filters = 128, kernel_size = (3, 3), padding = "same",
+                 activation = "relu"))
+model.add(MaxPooling2D(pool_size = (2, 2), strides = (2, 2)))
 
 # Third convolutional layer
 print("Adding third Conv2D")
-conv = keras.layers.Conv2D(filters = 256,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(conv)
+model.add(Conv2D(filters = 256, kernel_size = (3, 3), padding = "same",
+                 activation = "relu"))
 
 # Fourth convolutional layer
 print("Adding fourth Conv2D")
-conv = keras.layers.Conv2D(filters = 256,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(conv)
-conv = keras.layers.MaxPooling2D(pool_size = (1, 2), strides = (2, 2))(conv)
+model.add(Conv2D(filters = 256, kernel_size = (3, 3), padding = "same",
+                 activation = "relu"))
+model.add(MaxPooling2D(pool_size = (1, 2), strides = (2, 2)))
 
 # Fifth convolutional layer
 print("Adding fifth Conv2D")
-conv = keras.layers.Conv2D(filters = 512,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(conv)
+model.add(Conv2D(filters = 512, kernel_size = (3, 3), padding = "same",
+                 activation = "relu"))
 
 # First normalization layer
 print("Adding first normalization layer")
-conv = keras.layers.BatchNormalization()(conv)
+model.add(BatchNormalization())
 
 # Sixth convolutional layer
 print("Adding sixth Conv2D")
-conv = keras.layers.Conv2D(filters = 512,
-                           kernel_size = (3, 3),
-                           padding = "same",
-                           activation = "relu")(conv)
+model.add(Conv2D(filters = 512, kernel_size = (3, 3), padding = "same",
+                 activation = "relu"))
 
 # Second normalization layer
 print("Adding second normalization layer")
-conv = keras.layers.BatchNormalization()(conv)
-conv = keras.layers.MaxPooling2D(pool_size = (1, 2), strides = (2, 2))(conv)
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size = (1, 2), strides = (2, 2)))
 
 # Seventh convolutional layer
 print("Adding seventh Conv2D")
-conv = keras.layers.Conv2D(filters = 512,
-                           kernel_size = (2, 2),
-                           padding = "valid",
-                           activation = "relu")(conv)
+model.add(Conv2D(filters = 512, kernel_size = (2, 2), padding = "valid",
+                 activation = "relu"))
 
 
 # Reshape layer
 print("Adding reshape")
-seq = keras.layers.Reshape((9, 512))(conv)
+model.add(Reshape((4, 1152)))
 
-# Upper LSTM layer
+# LSTM layer
 print("Adding bidirectional LSTM layer")
-lstm_a = keras.layers.LSTM(units = 512, return_sequences = True)(seq)
-
-# Lower LSTM layer
-lstm_b = keras.layers.LSTM(units = 512, go_backwards = True,
-                           return_sequences = True)(seq)
-
-# Add
-result = keras.layers.Add()([lstm_a, lstm_b])
-
-result = keras.layers.Flatten()(result)
-
+model.add(Bidirectional(LSTM(units = 512, return_sequences = True),
+                        merge_mode = "sum"))
 
 # transform RNN output to character activation
 # 52 output units: 52 letters -> (upper/lowercase)
 print("Adding activation")
-act = keras.layers.Dense(52, kernel_initializer = "he_normal")(result)
-y_pred = keras.layers.Activation("softmax")(act)
+model.add(Dense(52, kernel_initializer = "he_normal",
+                activation = "softmax"))
 
-model = keras.models.Model(inputs=input_data, outputs=y_pred)
 model.summary()
 
 # Compile
