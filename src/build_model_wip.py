@@ -5,11 +5,11 @@ import sys
 
 from keras import backend as K
 from keras.layers import Activation, Add, BatchNormalization, Bidirectional
-from keras.layers import Conv2D, Dense, Embedding, Flatten, Input, Lambda, LSTM, MaxPooling2D
+from keras.layers import Conv2D, Dense, Input, Lambda, LSTM, MaxPooling2D
 from keras.layers import Reshape, TimeDistributed
 from keras.models import Model, Sequential
 from keras.optimizers import SGD
-from keras.utils import to_categorical
+from keras.utils import plot_model, to_categorical
 
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 data_input = "wl2"
@@ -30,11 +30,26 @@ image_paths = [data_input + "/{0}".format(f)
 data = []
 labels = []
 
+# Create mapping from char to int
+char_to_int = dict((c, i) for i, c in enumerate(alphabet))
+int_to_char = dict((i, c) for i, c in enumerate(alphabet))
+
 # Shamelessly stolen from Keras' image_ocr.py example
 def ctc_lambda_func(args):
     y_pred, labels, input_length, label_length = args
     y_pred = y_pred[:, rnn_ignore:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
+
+def ctc_decode(y_pred):
+    result = []
+    y_pred_len = np.ones(y_pred.shape[0]) * y_pred.shape[1]
+    label = K.get_value(
+              K.ctc_decode(y_pred, input_length = y_pred_len, greedy = True)[0][0])[0]
+    print("Label before conversion:")
+    print(label)
+    for i in label:
+        result.append(int_to_char[i])
+    return ''.join(result)
 
 # Load images, convert to greyscale
 for image_path in image_paths:
@@ -62,9 +77,6 @@ for image_path in image_paths:
     data.append(grey)
     labels.append(label)
 
-# Create mapping from char to int
-char_to_int = dict((c, i) for i, c in enumerate(alphabet))
-int_to_char = dict((i, c) for i, c in enumerate(alphabet))
 
 # Convert labels into integers for Keras
 labels[:] = [[char_to_int[c] for c in lb] for lb in labels]
@@ -138,22 +150,23 @@ prediction = Dense(alphabet_size, kernel_initializer = "he_normal",
 
 Model(inputs=input_data, outputs = prediction).summary()
 
-# CTC loss
-labels = Input(name = "labels", shape = [alphabet_size], dtype = "float32")
+# CTC input layers - only for training
+labels = Input(name = "labels", shape = [max_length], dtype = "float32")
 input_length = Input(name = "input_length", shape = [1], dtype = "int64")
 label_length = Input(name = "label_length", shape = [1], dtype = "int64")
+
+# CTC loss - only for training
 loss_out = Lambda(ctc_lambda_func, output_shape = (1,), name = "CTC")(
                   [prediction, labels, input_length, label_length])
 
 model = Model(inputs = [input_data, labels, input_length, label_length],
-              outputs = loss_out)
+              outputs = [loss_out])
+
+sgd = SGD(lr=0.02, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
 
 # Compile
 model.compile(loss={"CTC": lambda y_true, y_pred: y_pred},
-              optimizer="adam", metrics=["accuracy"])
-#model = Model(inputs=input_data, outputs = prediction)
-#model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-#model.fit(x = X, y = Y_onehot, validation_split = 0.25, batch_size = 32, epochs = 20, verbose = 1)
+              optimizer=sgd, metrics=["accuracy"])
 
 # Train
 input_length_arr = [(rnn_time_steps - rnn_ignore) for x in range(0, X.shape[0])]
@@ -163,13 +176,40 @@ il_arr = np.array(input_length_arr)
 label_length_arr = [label_ctc_size for y in range(0, Y.shape[0])]
 ll_arr = np.array(label_length_arr)
 
-model.fit(x = [X, Y_merged, il_arr, ll_arr], y = Y_merged,
+plot_model(model, to_file = "model.png", show_shapes=True)
+
+dummy_output = np.zeros([Y.shape[0]])
+model.fit(x = [X, Y, il_arr, ll_arr], y = dummy_output,
           validation_split = 0.25,
           batch_size = 32,
-          epochs = 100, verbose = 1)
+          epochs = 20, verbose = 1)
 
-# Save
-print("Saving model")
-model.save("model.h5")
+# Save weights
+#print("Saving model weights")
+#model.save_weights("weights.h5")
+
+# Create prediction model
+model_p = Model(inputs = [input_data], outputs = [prediction])
+for i in range(0, 17): # convolutional part contains 17 layers
+    extracted_weights = model.layers[i].get_weights()
+    model_p.layers[i].set_weights(extracted_weights)
+
+# Infer
+test_img = cv2.imread("wl2/Tc.jpg")
+test_img = cv2.resize(test_img, (img_width, img_height))
+test_img = cv2.cvtColor(test_img, cv2.COLOR_RGB2GRAY)
+test_img = test_img.astype('float32')
+test_img /= 255
+test_img = test_img.reshape(1, img_width, img_height, 1)
+
+truth = "Tc"
+
+pred = model_p.predict(test_img)
+decoded = ctc_decode(pred)
+
+print("Decoded: ")
+print(decoded)
+print("Actual: ")
+print(truth)
 
 sys.exit()
