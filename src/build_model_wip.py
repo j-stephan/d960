@@ -99,54 +99,58 @@ input_data = Input(name="input_data", shape = (img_width, img_height, 1),
                    dtype = "float32")
 
 # First convolutional layer
-conv = Conv2D(filters = 64, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(input_data)
-conv = MaxPooling2D(pool_size = (2, 2), strides = (2, 2))(conv)
+conv = Conv2D(name = "conv1", filters = 64, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(input_data)
+conv = MaxPooling2D(name = "max_pool1", pool_size = (2, 2),
+                    strides = (2, 2))(conv)
 
 # Second convolutional layer
-conv = Conv2D(filters = 128, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(conv)
-conv = MaxPooling2D(pool_size = (2, 2), strides = (2, 2))(conv)
+conv = Conv2D(name = "conv2", filters = 128, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(conv)
+conv = MaxPooling2D(name = "max_pool2", pool_size = (2, 2),
+                    strides = (2, 2))(conv)
 
 # Third convolutional layer
-conv = Conv2D(filters = 256, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(conv)
+conv = Conv2D(name = "conv3", filters = 256, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(conv)
 
 # Fourth convolutional layer
-conv = Conv2D(filters = 256, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(conv)
-conv = MaxPooling2D(pool_size = (1, 2), strides = (2, 2))(conv)
+conv = Conv2D(name = "conv4", filters = 256, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(conv)
+conv = MaxPooling2D(name = "max_pool3", pool_size = (1, 2),
+                    strides = (2, 2))(conv)
 
 # Fifth convolutional layer
-conv = Conv2D(filters = 512, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(conv)
+conv = Conv2D(name = "conv5", filters = 512, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(conv)
 
 # First normalization layer
-conv = BatchNormalization()(conv)
+conv = BatchNormalization(name = "batch_norm1")(conv)
 
 # Sixth convolutional layer
-conv = Conv2D(filters = 512, kernel_size = (3, 3), padding = "same",
-              activation = "relu")(conv)
+conv = Conv2D(name = "conv6", filters = 512, kernel_size = (3, 3),
+              padding = "same", activation = "relu")(conv)
 
 # Second normalization layer
-conv = BatchNormalization()(conv)
-conv = MaxPooling2D(pool_size = (1, 2), strides = (2, 2))(conv)
+conv = BatchNormalization(name = "batch_norm2")(conv)
+conv = MaxPooling2D(name = "max_pool4", pool_size = (1, 2),
+                    strides = (2, 2))(conv)
 
 # Seventh convolutional layer
-conv = Conv2D(filters = 512, kernel_size = (2, 2), padding = "valid",
-              activation = "relu")(conv)
+conv = Conv2D(name = "conv7", filters = 512, kernel_size = (2, 2),
+              padding = "valid", activation = "relu")(conv)
 #Model(inputs=input_data, outputs = conv).summary()
 
 # Reshape layer
-conv = Reshape((rnn_time_steps, rnn_vec_size))(conv)
+conv = Reshape((rnn_time_steps, rnn_vec_size), name = "reshape")(conv)
 
 # Bidirectional LSTM layer
 lstm = Bidirectional(LSTM(units = 512, return_sequences = True),
-                     merge_mode = "sum")(conv)
+                     merge_mode = "sum", name = "lstm")(conv)
 
 # transform RNN output to character activation
 prediction = Dense(alphabet_size, kernel_initializer = "he_normal",
-                   activation = "softmax")(lstm)
+                   activation = "softmax", name = "activation")(lstm)
 
 Model(inputs=input_data, outputs = prediction).summary()
 
@@ -180,36 +184,11 @@ plot_model(model, to_file = "model.png", show_shapes=True)
 
 dummy_output = np.zeros([Y.shape[0]])
 model.fit(x = [X, Y, il_arr, ll_arr], y = dummy_output,
-          validation_split = 0.25,
           batch_size = 32,
           epochs = 20, verbose = 1)
 
 # Save weights
-#print("Saving model weights")
-#model.save_weights("weights.h5")
-
-# Create prediction model
-model_p = Model(inputs = [input_data], outputs = [prediction])
-for i in range(0, 17): # convolutional part contains 17 layers
-    extracted_weights = model.layers[i].get_weights()
-    model_p.layers[i].set_weights(extracted_weights)
-
-# Infer
-test_img = cv2.imread("wl2/Tc.jpg")
-test_img = cv2.resize(test_img, (img_width, img_height))
-test_img = cv2.cvtColor(test_img, cv2.COLOR_RGB2GRAY)
-test_img = test_img.astype('float32')
-test_img /= 255
-test_img = test_img.reshape(1, img_width, img_height, 1)
-
-truth = "Tc"
-
-pred = model_p.predict(test_img)
-decoded = ctc_decode(pred)
-
-print("Decoded: ")
-print(decoded)
-print("Actual: ")
-print(truth)
+print("Saving model weights")
+model.save_weights("weights.h5")
 
 sys.exit()
