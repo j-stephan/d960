@@ -180,7 +180,11 @@ il_arr = np.array(input_length_arr)
 label_length_arr = [label_ctc_size for y in range(0, Y.shape[0])]
 ll_arr = np.array(label_length_arr)
 
-plot_model(model, to_file = "model.png", show_shapes=True)
+# plot_model(model, to_file = "model.png", show_shapes=True)
+
+if os.path.isfile("weights.h5"):
+    print("Loading model weights")
+    model.load_weights("weights.h5", by_name = True)
 
 dummy_output = np.zeros([Y.shape[0]])
 model.fit(x = [X, Y, il_arr, ll_arr], y = dummy_output,

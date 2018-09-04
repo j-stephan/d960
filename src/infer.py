@@ -11,8 +11,10 @@ from keras.models import Model, Sequential
 from keras.optimizers import SGD
 from keras.utils import plot_model, to_categorical
 
+from shutil import copy
+
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-data_input = "wl2_pass1"
+data_input = "wl2"
 max_length = 2
 img_width = max_length * 64
 img_height = 64
@@ -160,6 +162,9 @@ for image_path in image_paths:
     if decoded != truth:
         print("Mismatch! Decoded: " + decoded + ", actual: " + truth)
         mismatched += 1
+        copy(image_path, "mismatched/")
+    else:
+        copy(image_path, "passed/")
 
     img_num += 1
 
