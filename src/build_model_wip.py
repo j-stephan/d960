@@ -4,6 +4,7 @@ import os
 import sys
 
 from keras import backend as K
+from keras.callbacks import Callback
 from keras.layers import Activation, Add, BatchNormalization, Bidirectional
 from keras.layers import Conv2D, Dense, Input, Lambda, LSTM, MaxPooling2D
 from keras.layers import Reshape, TimeDistributed
@@ -21,7 +22,7 @@ rnn_ignore = 2 # ignore first outputs of RNN because they are garbage
 rnn_vec_size = 672
 #rnn_vec_size = 288
 alphabet_size = len(alphabet) + 1 # 1 extra for blank label
-label_ctc_size = 2 * alphabet_size
+label_ctc_size = max_length
 
 image_paths = [data_input + "/{0}".format(f)
                 for f in os.listdir(data_input)
@@ -34,22 +35,23 @@ labels = []
 char_to_int = dict((c, i) for i, c in enumerate(alphabet))
 int_to_char = dict((i, c) for i, c in enumerate(alphabet))
 
+# Callback for logging
+class Logger(Callback):
+    def __init__(self, logfile):
+        self.f = open(logfile, 'w')
+        print("epoch;loss;acc", file = self.f)
+
+    def on_epoch_end(self, epoch, logs):
+        print(str(epoch) + ';' +
+              str(logs.get('loss')) + ';' + 
+              str(logs.get('acc')), file = self.f)
+
+
 # Shamelessly stolen from Keras' image_ocr.py example
 def ctc_lambda_func(args):
     y_pred, labels, input_length, label_length = args
     y_pred = y_pred[:, rnn_ignore:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
-
-def ctc_decode(y_pred):
-    result = []
-    y_pred_len = np.ones(y_pred.shape[0]) * y_pred.shape[1]
-    label = K.get_value(
-              K.ctc_decode(y_pred, input_length = y_pred_len, greedy = True)[0][0])[0]
-    print("Label before conversion:")
-    print(label)
-    for i in label:
-        result.append(int_to_char[i])
-    return ''.join(result)
 
 # Load images, convert to greyscale
 for image_path in image_paths:
@@ -80,17 +82,10 @@ for image_path in image_paths:
 
 # Convert labels into integers for Keras
 labels[:] = [[char_to_int[c] for c in lb] for lb in labels]
-labels_onehot = to_categorical(labels, alphabet_size)
-labels_merged = []
-# FIXME: Expand to wl > 2
-for arr in labels_onehot:
-    labels_merged.append(arr[0] + arr[1])
 
 # Create numpy arrays
 X = np.array(data)
 Y = np.array(labels)
-Y_onehot = np.array(labels_onehot)
-Y_merged = np.array(labels_merged)
 
 X = X.reshape(X.shape[0], img_width, img_height, 1)
 
@@ -186,10 +181,13 @@ if os.path.isfile("weights.h5"):
     print("Loading model weights")
     model.load_weights("weights.h5", by_name = True)
 
+logger = Logger('training.log')
+
 dummy_output = np.zeros([Y.shape[0]])
 model.fit(x = [X, Y, il_arr, ll_arr], y = dummy_output,
           batch_size = 32,
-          epochs = 20, verbose = 1)
+          epochs = 20, verbose = 1,
+          callbacks = [logger])
 
 # Save weights
 print("Saving model weights")
