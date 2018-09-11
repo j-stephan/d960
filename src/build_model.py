@@ -10,7 +10,14 @@ from keras.layers import Reshape, TimeDistributed
 from keras.models import Model, Sequential
 from keras.utils import to_categorical
 
-data_input = "wl1"
+alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+data_input = "wl2"
+img_width = 2 * 64
+img_height = 64
+rnn_time_steps = 16
+rnn_vec_size = 288
+alphabet_size = len(alphabet) + 1 # 1 extra for blank label
+max_length = 2
 
 image_paths = [data_input + "/{0}".format(f)
                 for f in os.listdir(data_input)
@@ -22,10 +29,6 @@ labels = []
 # Shamelessly stolen from Keras' image_ocr.py example
 def ctc_lambda_func(args):
     y_pred, labels, input_length, label_length = args
-    print(y_pred)
-    print(labels)
-    print(input_length)
-    print(label_length)
     y_pred = y_pred[:, 2:, :]
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
@@ -41,7 +44,7 @@ for image_path in image_paths:
         continue
 
     # Resize
-    image = cv2.resize(image, (64, 64))
+    image = cv2.resize(image, (img_width, img_height))
 
     # Convert to greyscale
     grey = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -54,7 +57,6 @@ for image_path in image_paths:
     data.append(grey)
     labels.append(label)
 
-alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 # Create mapping from char to int
 char_to_int = dict((c, i) for i, c in enumerate(alphabet))
 int_to_char = dict((i, c) for i, c in enumerate(alphabet))
@@ -68,12 +70,13 @@ print(labels)
 X = np.array(data)
 Y = np.array(labels)
 
-X = X.reshape(X.shape[0], 64, 64, 1)
+X = X.reshape(X.shape[0], img_width, img_height, 1)
 
 model = Sequential()
 
 # Input layer
-input_data = Input(name="input_data", shape = (64, 64, 1), dtype = "float32")
+input_data = Input(name="input_data", shape = (img_width, img_height, 1),
+                   dtype = "float32")
 
 # First convolutional layer
 conv = Conv2D(filters = 64, kernel_size = (3, 3), padding = "same",
@@ -112,24 +115,24 @@ conv = MaxPooling2D(pool_size = (1, 2), strides = (2, 2))(conv)
 # Seventh convolutional layer
 conv = Conv2D(filters = 512, kernel_size = (2, 2), padding = "valid",
               activation = "relu")(conv)
+Model(inputs=input_data, outputs = conv).summary()
 
 # Reshape layer
-conv = Reshape((16, 288))(conv)
+conv = Reshape((rnn_time_steps, rnn_vec_size))(conv)
 
 # Bidirectional LSTM layer
 lstm = Bidirectional(LSTM(units = 512, return_sequences = True),
                      merge_mode = "sum")(conv)
 
 # transform RNN output to character activation
-# 23 output units: 52 letters (uppercase/lowercase)
-prediction = Dense(52, kernel_initializer = "he_normal",
+prediction = Dense(alphabet_size, kernel_initializer = "he_normal",
                    activation = "softmax")(lstm)
 
 Model(inputs=input_data, outputs = prediction).summary()
 
 # CTC loss
 print("CTC loss")
-labels = Input(name = "labels", shape = (52, ), dtype = "float32")
+labels = Input(name = "labels", shape = [2], dtype = "float32")
 input_length = Input(name = "input_length", shape = [1], dtype = "int64")
 label_length = Input(name = "label_length", shape = [1], dtype = "int64")
 loss_out = Lambda(ctc_lambda_func, output_shape = (1,), name = "CTC")(
