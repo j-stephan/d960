@@ -14,7 +14,6 @@ from keras.utils import plot_model, to_categorical
 from shutil import copy
 
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-data_input = "wl2"
 max_length = 2
 img_width = max_length * 64
 img_height = 64
@@ -25,21 +24,88 @@ rnn_vec_size = 672
 alphabet_size = len(alphabet) + 1 # 1 extra for blank label
 label_ctc_size = 2 * alphabet_size
 
+test_input = "wl2"
+validation_input = "wl2"
+test_results = "test.csv"
+validation_results = "validation.csv"
+
 
 # Create mapping from char to int
 char_to_int = dict((c, i) for i, c in enumerate(alphabet))
 int_to_char = dict((i, c) for i, c in enumerate(alphabet))
 
-def ctc_decode(y_pred):
-    result = []
-    y_pred_len = np.ones(y_pred.shape[0]) * y_pred.shape[1]
-    label = K.get_value(
-              K.ctc_decode(y_pred, input_length = y_pred_len, greedy = True)[0][0])[0]
-#    print("Label before conversion:")
-#    print(label)
-    for i in label:
-        result.append(int_to_char[i])
-    return ''.join(result)
+def ctc_decode(y_preds):
+    # tf.keras.backend.ctc_decode returns a tuple of lists of one element
+    # that contains the info we are interested in. The following lines
+    # extract the needed information from the tuple (of lists of...)
+    results = []
+    y_pred_len = np.ones(y_preds.shape[0]) * y_preds.shape[1]
+    decoded, _ = K.ctc_decode(y_preds, input_length = y_pred_len, greedy = True)
+    for label in K.get_value(decoded[0]):
+        result = []
+        for i in label:
+            if i == -1:
+                continue # skip blanks
+            result.append(int_to_char[i]) # map to characters
+        results.append(''.join(result)) # create string
+    return results
+
+def infer(logfile, image_paths, model):
+    # Infer all images
+    mismatched = 0
+    img_num = 0
+    f = open(logfile, 'w')
+    print("truth;decoded;mismatch", file = f)
+    greys = []
+    truths = []
+    print("Loading images...")
+    for image_path in image_paths:
+        name = os.path.basename(image_path)
+        name = os.path.splitext(name)[0]
+
+        # Load image
+        image = cv2.imread(image_path)
+        if image is None:
+            print("Warning: Skipping file at " + image_path)
+            continue
+
+        # Resize
+        image = cv2.resize(image, (img_width, img_height))
+
+        # Convert to greyscale
+        grey = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+        # Convert to float and normalize
+        grey = grey.astype('float32')
+        grey /= 255
+        
+        # Remove numbers from name string
+        truth = ''.join(i for i in name if not i.isdigit())
+
+        # Append
+        greys.append(grey)
+        truths.append(truth)
+
+    # Convert to numpy array
+    greys = np.array(greys)
+
+    # reshape
+    greys = greys.reshape(greys.shape[0], img_width, img_height, 1)
+
+    # Infer
+    print("Inferring...")
+    preds = model.predict(greys)
+    decodeds = ctc_decode(preds)
+
+    for d, t in zip(decodeds, truths):
+        mismatch_bool = 1
+        if d != t:
+            mismatched += 1
+            mismatch_bool = 0
+        print(t + ";" + d + ";" + str(mismatch_bool), file = f)
+        img_num += 1
+
+    print("Mismatch ratio: " + str(mismatched) + "/" + str(img_num))
 
 # Input layer
 input_data = Input(name="input_data", shape = (img_width, img_height, 1),
@@ -110,64 +176,17 @@ print("Loading model weights")
 model.load_weights("weights.h5", by_name = True)
 
 # Infer
-#test_img = cv2.imread("wl2/Tc.jpg")
-#test_img = cv2.resize(test_img, (img_width, img_height))
-#test_img = cv2.cvtColor(test_img, cv2.COLOR_RGB2GRAY)
-#test_img = test_img.astype('float32')
-#test_img /= 255
-#test_img = test_img.reshape(1, img_width, img_height, 1)
+test_paths = [test_input + "/{0}".format(f)
+              for f in os.listdir(test_input)
+                if os.path.isfile(os.path.join(test_input, f))]
+validation_paths = [validation_input + "/{0}".format(f)
+                    for f in os.listdir(validation_input)
+                        if os.path.isfile(os.path.join(validation_input, f))]
 
-#truth = "Tc"
+print("===== Testing =====")
+infer(test_results, test_paths, model)
 
-#pred = model.predict(test_img)
-#decoded = ctc_decode(pred)
-
-image_paths = [data_input + "/{0}".format(f)
-                for f in os.listdir(data_input)
-                    if os.path.isfile(os.path.join(data_input, f))]
-
-# Infer all images
-mismatched = 0
-img_num = 0
-for image_path in image_paths:
-    name = os.path.basename(image_path)
-    name = os.path.splitext(name)[0]
-
-    # Load image
-    image = cv2.imread(image_path)
-    if image is None:
-        print("Warning: Skipping file at " + image_path)
-        continue
-
-    # Resize
-    image = cv2.resize(image, (img_width, img_height))
-
-    # Convert to greyscale
-    grey = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-
-    # Convert to float and normalize
-    grey = grey.astype('float32')
-    grey /= 255
-    
-    # Convert to model format
-    grey = grey.reshape(1, img_width, img_height, 1)
-
-    # Remove numbers from name string
-    truth = ''.join(i for i in name if not i.isdigit())
-
-    # infer
-    pred = model.predict(grey)
-    decoded = ctc_decode(pred)
-
-    if decoded != truth:
-        print("Mismatch! Decoded: " + decoded + ", actual: " + truth)
-        mismatched += 1
-        copy(image_path, "mismatched/")
-    else:
-        copy(image_path, "passed/")
-
-    img_num += 1
-
-print("Mismatch ratio: " + str(mismatched) + "/" + str(img_num))
+print("===== Validation =====")
+infer(validation_results, validation_paths, model)
 
 sys.exit()
