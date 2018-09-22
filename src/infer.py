@@ -15,19 +15,18 @@ from shutil import copy
 
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 max_length = 2
-img_width = max_length * 64
+img_width = 6 * 32
 img_height = 64
 rnn_time_steps = 16
 rnn_ignore = 2 # ignore first outputs of RNN because they are garbage
-rnn_vec_size = 672
-#rnn_vec_size = 288
+rnn_vec_size = 1056
 alphabet_size = len(alphabet) + 1 # 1 extra for blank label
 label_ctc_size = 2 * alphabet_size
 
 test_input = "wl2"
-validation_input = "wl2"
+validation_input = "wl6_real"
 test_results = "test.csv"
-validation_results = "validation.csv"
+validation_results = "validation_wl6_real.csv"
 
 
 # Create mapping from char to int
@@ -61,7 +60,8 @@ def infer(logfile, image_paths, model):
     print("Loading images...")
     for image_path in image_paths:
         name = os.path.basename(image_path)
-        name = os.path.splitext(name)[0]
+        name = os.path.splitext(name)[0] # remove ~1~, ~2~ etc.
+        name = os.path.splitext(name)[0] # remove extension
 
         # Load image
         image = cv2.imread(image_path)
@@ -183,8 +183,8 @@ validation_paths = [validation_input + "/{0}".format(f)
                     for f in os.listdir(validation_input)
                         if os.path.isfile(os.path.join(validation_input, f))]
 
-print("===== Testing =====")
-infer(test_results, test_paths, model)
+#print("===== Testing =====")
+#infer(test_results, test_paths, model)
 
 print("===== Validation =====")
 infer(validation_results, validation_paths, model)
