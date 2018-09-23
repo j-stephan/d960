@@ -1,0 +1,94 @@
+\section{Daten und Methoden}
+\label{daten}
+
+\subsection{Reale und künstliche Daten}
+\label{daten:daten}
+
+
+\subsection{Bilderkennungsverfahren}
+\label{daten:bilderkennung}
+
+\subsection{\textit{Transfer Learning}}
+\label{daten:transfer}
+
+\subsection{Netzbeschreibung}
+\label{daten:netzbeschreibung}
+
+\subsection{Umsetzung auf dem HPC-System \textit{Taurus}}
+\label{daten:taurus}
+
+Das im Abschnitt~\ref{daten:netzbeschreibung} beschriebene Netz ist auf dem zur TU Dresden gehörigen HPC-System
+\textit{Taurus} ohne Einschränkungen lauffähig. Zur Ausführung der Python-Skripte für \textit{Training} und
+\textit{Inferring} ist lediglich das Laden einiger im Folgenden genannten Module nötig. Die Nutzung mehrerer GPUs
+erfordert kleinere Anpassungen am Quelltext der Skripte, die ebenfalls in diesem Abschnitt aufgeführt werden.
+
+\subsubsection{Verwendete Hardware}
+\label{daten:taurus:hardware}
+
+Sowohl das \textit{Training} als auch das \textit{Inferring} wurden stets auf einem der im \textit{Taurus} vorhandenen
+GPU-Knoten mit vier NVIDIA Tesla K80 und 62 GiB Arbeitsspeicher durchgeführt (Partition \texttt{gpu2}).
+
+Der Datengenerator wurde (je nach Verfügbarkeit) auf einem der \textit{Taurus}-CPU-Knoten betrieben, in der Regel auf
+einem Knoten der \texttt{sandy}-Partition mit 16 CPU-Kernen und 30\ GiB Arbeitsspeicher.
+
+\subsubsection{Verwendete Module}
+\label{daten:taurus:module}
+
+Sowohl die \textit{Trainings}- und \textit{Inferring}-Skripte als auch der Datengenerator wurden innerhalb der
+SCS5-Umgebung verwendet.
+
+Die Skripte für das \textit{Training} und das \textit{Inferring} erfordern neben dem \textit{Keras}-Framework zusätzlich
+die Bibliotheken \textit{NumPy} (für den Umgang mit großen Arrays) und \textit{OpenCV} (für die Bildvorverarbeitung).
+Das Modulsystem des \textit{Taurus} stellt alle genannten Abhängigkeiten bereit; zusätzlich sorgt das Laden des
+\textit{Keras}-Moduls dafür, dass die \textit{NumPy}-Bibliothek als Teil von Python automatisch mitgeladen wird. Für die
+Ausführung genügt deshalb das Laden der \textit{Keras-} und \textit{OpenCV}-Module. Zum gegenwärtigen Zeitpunkt
+(20.\ September 2018) werden \textit{Keras} in der Version \texttt{2.2.0-foss-2018a-Python-3.6.4} und \textit{OpenCV} in
+der Version \texttt{3.4.1-foss-2018a-Python-3.6.4} geladen.
+
+Der Datengenerator bringt diverse Abhängigkeiten mit sich, die durch das \textit{Taurus}-Modulsystem nicht vollständig
+abgedeckt werden können. Aus diesem Grund wurde für seinen Einsatz im Rahmen des ScaDS-Projekts eine virtuelle
+Python-Umgebung (\textit{venv}) angelegt, in der die benötigten Python-Pakete vorhanden sind. Diese \textit{venv} kam
+auch bei der Anfertigung dieser Arbeit zum Einsatz. Sie befindet sich auf dem \textit{Taurus} im
+ScaDS-Projektverzeichnis unter dem folgenden Pfad:
+
+\texttt{/projects/p\_scads/keras/new\_venv2}
+
+\subsubsection{Nutzung mehrerer GPUs}
+\label{daten:taurus:multigpu}
+
+Die Dauer des \textit{Trainings} kann -- abhängig von der konkreten Netzwerkkonfiguration und der Datenmenge -- mitunter
+sehr viel Zeit in Anspruch nehmen, bis hin zu mehreren Tagen. Es liegt deshalb nahe, den benötigten Zeitaufwand durch
+die Erhöhung des Parallelisierungsgrades zu verringern.
+
+Das \textit{Keras}-Framework unterstützt in Verbindung mit dem \textit{TensorFlow}-Backend die parallele Nutzung
+mehrerer GPUs. Dazu wird das Netz zuerst im Arbeitsspeicher der CPU angelegt und dann auf die vorhandenen GPUs verteilt.
+Das so entstandene \texttt{multi\_gpu\_model} kann in der Folge wie ein normales \textit{Keras}-Modell verwendet werden
+(siehe Quelltext~\ref{daten:taurus:multigpu:source}).
+
+\begin{code}
+\begin{minted}{python}
+import tensorflow as tf
+# ...
+
+from keras.utils.multi_gpu_utils import multi_gpu_model
+# ...
+
+# Keras-Beschränkung: gpu_num muss ein Vielfaches von 2 sein
+if (gpu_num >= 2) and (num_gpu % 2 == 0):
+    with tf.device('/cpu'):
+        model = Model(inputs = [input_data, labels,
+                                input_length, label_length],
+                      outputs = [loss_out])
+    model = multi_gpu_model(model, gpu_num)
+else:
+    # Standardfall: gpu_num <= 1 oder ungerade
+    model = Model(inputs = [input_data, labels,
+                            input_length, label_length],
+                  outputs = [loss_out])
+
+model.compile(...)
+model.fit(...)
+\end{minted}
+\captionof{listing}{Nutzung mehrerer GPUs mit \textit{Keras}}
+\label{daten:taurus:multigpu:source}
+\end{code}

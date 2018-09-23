@@ -1,0 +1,31 @@
+\section{Ergebnisse}
+
+\subsection{Test- und Validierungsdaten}
+
+\subsection{Test- und Validierungsergebnisse}
+
+\subsection{Erkennungsraten}
+
+\subsection{Performance}
+
+\subsubsection{Nutzung mehrerer GPUs}
+
+Der beabsichtigte Geschwindigkeitszuwachs beim \textit{Training} durch die Nutzung der für die Verwendung mehrerer GPUs
+vorgesehenen \textit{Keras}-Befehle (wie in Abschnitt~\ref{daten:multigpu} beschrieben) fiel deutlich kleiner aus als
+erwartet. So dauerte das \textit{Training} bei der Nutzung einer einzigen GPU 669 Sekunden bei einer Datensatzgröße
+von 90123 Bildern (7 ms pro Schritt). Die Dauer der Verarbeitung des selben Datensatzes mit vier GPUs verkürzte sich auf
+lediglich 515s (6 ms pro Schritt). Das entspricht einem Speedup $S$ von 1,299 sowie einer parallelen Effizienz $E$ von
+0,325 und liegt somit weit unter den theoretisch erreichbaren Werten von $S = 4$ bzw. $E = 1$.
+
+Wie existierende Benchmarks zeigen, ist dies kein inhärentes Problem von Deep-Learning-Netzwerken, der implementierten
+Algorithmen oder des \textit{TensorFlow}-Backends (vgl.~\cite{tensorflowbench}). Es liegt deshalb nahe, das Problem bei
+\textit{Keras} selbst zu suchen.
+
+Tatsächlich zeigen Profiler-Ergebnisse, dass zwischen der Verarbeitung einzelner \textit{Batches} große Lücken
+entstehen, während derer keine mit dem \textit{Training} zusammenhängenden Aufgaben durchgeführt werden.
+
+HIER PROFILE UND BEGRÜNDUNG EINFÜGEN
+
+Eine Diskussion dieses Problems in der Literatur konnte während der Recherche nicht festgestellt werden. Es existieren
+jedoch erste Ansätze innerhalb der Keras-Nutzergemeinschaft, die unzureichende Asynchronität durch direkten Zugriff auf 
+\textit{TensorFlow} zu umgehen (vgl.~\cite{zamecnik2017}).
