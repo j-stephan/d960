@@ -54,7 +54,7 @@ def infer(logfile, image_paths, model):
     mismatched = 0
     img_num = 0
     f = open(logfile, 'w')
-    print("truth;decoded;mismatch", file = f)
+    print("truth;decoded;wordscore;charscore", file = f)
     greys = []
     truths = []
     print("Loading images...")
@@ -99,10 +99,18 @@ def infer(logfile, image_paths, model):
 
     for d, t in zip(decodeds, truths):
         mismatch_bool = 1
+        ratio = 1.0
         if d != t:
             mismatched += 1
             mismatch_bool = 0
-        print(t + ";" + d + ";" + str(mismatch_bool), file = f)
+
+            ratio_step = 1.0 / float(len(t))
+            ratio = 0.0
+            for i in len(t):
+                if d[i] == t[i]:
+                    ratio = ratio + ratio_step
+
+        print(t + ";" + d + ";" + str(mismatch_bool) + ";" + str(ratio), file = f)
         img_num += 1
 
     print("Mismatch ratio: " + str(mismatched) + "/" + str(img_num))
@@ -183,8 +191,8 @@ validation_paths = [validation_input + "/{0}".format(f)
                     for f in os.listdir(validation_input)
                         if os.path.isfile(os.path.join(validation_input, f))]
 
-#print("===== Testing =====")
-#infer(test_results, test_paths, model)
+print("===== Testing =====")
+infer(test_results, test_paths, model)
 
 print("===== Validation =====")
 infer(validation_results, validation_paths, model)
