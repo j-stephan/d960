@@ -5,7 +5,9 @@
 \usepackage{etoolbox}
 \usepackage[acronyms,nonumberlist,nopostdot,toc,savewrites,xindy]{glossaries}
 \usepackage[section,newfloat]{minted}
+\usepackage[super]{nth}
 \usepackage{pgfplots}
+\usepackage{siunitx}
 \usepackage{tcolorbox}
 
 \input{glossar}
@@ -32,9 +34,11 @@
 %                     NVIDIA. DirectX{\textregistered} ist ein eingetragenes Markenzeichen der Firma Microsoft.
 %                     OpenGL{\texttrademark} und OpenCL{\texttrademark} sind nichteingetragene Markenzeichen der
 %                     Khronos Group. Xeon Phi{\texttrademark} ist ein nichteingetragenes Markenzeichen der Firma Intel.}
-\acknowledgments{Für die Entwicklung des Testdatengenerators bedanke ich mich herzlich bei Herrn Eric Schölzel.}
+\acknowledgments{Für die tatkräftige Hilfe bei der manuellen Extraktion der Realdaten aus dem Kartenmaterial bedanke ich
+                 mich herzlich bei N. Werner. TODO: Vornamen erfragen}
 
 \bibfiles{bibliography.bib}
+\def\UrlBreaks{\do\/\do-}
 
 % Germanisiere LaTeX
 \deftranslation[to=German]{Acronyms}{Abkürzungsverzeichnis}
@@ -45,6 +49,8 @@
 \fancyhead[L]{Jan Stephan -- Texterkennung in topographischen Karten}
 
 \begin{document}
+
+\glsaddall
 
 \printglossary
 \printglossary[type=\acronymtype]

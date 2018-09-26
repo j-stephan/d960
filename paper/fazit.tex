@@ -3,3 +3,17 @@
 \subsection{Entwicklungsstand}
 
 \subsection{Ausblick}
+
+Eine Verbesserung der Ergebnisse ließe sich vermutlich durch eine Verbesserung der \textit{Trainings}-Daten erreichen.
+Insbesondere der Einsatz der Schriftarten \textit{Kursivschrift} und \textit{Roemisch} innerhalb des Datengenerators
+könnte hier messbare Fortschritte erzielen.
+
+Ein weiterer Ansatz zur Verbesserung der Erkennungsrate könnte darin liegen, Vorder- und Hintergrund, das heißt Text
+und Karte, voneinander zu trennen und getrennt auszuwerten.
+
+Hinsichtlich der Performance im Hinblick auf die GPU-Nutzung steht eine genauere Untersuchung der effizienten Nutzung
+mehrerer GPUs sowie der Beschleunigung durch eine künftige \gls{ctc}-Implementierung für GPUs aus.
+
+Zu untersuchen wäre ferner, inwieweit sich ein Netzwerk, das bereits auf ein ähnlich gelagertes Problem angelernt
+wurde (wie etwa die Texterkennung in Fotografien), im Rahmen von \textit{Transfer Learning} für die Texterkennung in
+topographischen Karten verwenden lässt.

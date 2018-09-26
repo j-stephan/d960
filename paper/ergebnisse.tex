@@ -8,24 +8,32 @@
 
 \subsection{Performance}
 
+\subsubsection{\textit{Training}}
+
+\subsubsection{\textit{Inferenz}}
+
 \subsubsection{Nutzung mehrerer GPUs}
 
 Der beabsichtigte Geschwindigkeitszuwachs beim \textit{Training} durch die Nutzung der für die Verwendung mehrerer GPUs
-vorgesehenen \textit{Keras}-Befehle (wie in Abschnitt~\ref{daten:multigpu} beschrieben) fiel deutlich kleiner aus als
-erwartet. So dauerte das \textit{Training} bei der Nutzung einer einzigen GPU 669 Sekunden bei einer Datensatzgröße
-von 90123 Bildern (7 ms pro Schritt). Die Dauer der Verarbeitung des selben Datensatzes mit vier GPUs verkürzte sich auf
-lediglich 515s (6 ms pro Schritt). Das entspricht einem Speedup $S$ von 1,299 sowie einer parallelen Effizienz $E$ von
-0,325 und liegt somit weit unter den theoretisch erreichbaren Werten von $S = 4$ bzw. $E = 1$.
+vorgesehenen \textit{Keras}-Befehle (wie in Abschnitt~\ref{daten:taurus:multigpu} beschrieben) fiel deutlich kleiner aus
+als erwartet. So dauerte das \textit{Training} bei der Nutzung einer einzigen GPU \SI{669}{\second} bei einer
+Datensatzgröße von 90123 Bildern (\SI{7}{\milli\second} pro Schritt). Die Dauer der Verarbeitung des selben Datensatzes
+mit vier GPUs verkürzte sich auf lediglich \SI{515}{\second} (\SI{6}{\milli\second} pro Schritt). Das entspricht einem
+Speedup $S$ von $1,299$ sowie einer parallelen Effizienz $E$ von $0,325$ und liegt somit weit unter den theoretisch
+erreichbaren Werten von $S = 4$ bzw. $E = 1$.
 
 Wie existierende Benchmarks zeigen, ist dies kein inhärentes Problem von Deep-Learning-Netzwerken, der implementierten
-Algorithmen oder des \textit{TensorFlow}-Backends (vgl.~\cite{tensorflowbench}). Es liegt deshalb nahe, das Problem bei
-\textit{Keras} selbst zu suchen.
+Algorithmen oder des \textit{TensorFlow}-Backends (vgl.~\cite{tensorflowbench}). Wahrscheinlich sind daher zwei
+Ursachen ausschlaggebend:
 
-Tatsächlich zeigen Profiler-Ergebnisse, dass zwischen der Verarbeitung einzelner \textit{Batches} große Lücken
-entstehen, während derer keine mit dem \textit{Training} zusammenhängenden Aufgaben durchgeführt werden.
+\begin{enumerate}
+    \item \textit{Keras'} \texttt{multi\_gpu\_model} könnte laut einiger Hinweise der Nutzergemeinschaft nicht sehr gut
+          implementiert sein - unter anderem wird mangelnde Überlappung zwischen Speichertransfers und Berechnungen auf
+          der GPU beklagt. Dieses Problem soll sich durch direkten Zugriff auf die \textit{TensorFlow}-API umgehen
+          lassen (vgl.~\cite{zamecnik2017}).
+    \item \textit{TensorFlows} \gls{ctc}-Implementierung kann in Ermangelung einer entsprechenden Implementierung nicht
+          von der Beschleunigung durch GPUs profitieren; eine zeitnahe Umsetzung ist derzeit (26.\ September 2018) nicht
+          in Sicht (vgl.~\cite{hibbert2016}).
+\end{enumerate}
 
-HIER PROFILE UND BEGRÜNDUNG EINFÜGEN
-
-Eine Diskussion dieses Problems in der Literatur konnte während der Recherche nicht festgestellt werden. Es existieren
-jedoch erste Ansätze innerhalb der Keras-Nutzergemeinschaft, die unzureichende Asynchronität durch direkten Zugriff auf 
-\textit{TensorFlow} zu umgehen (vgl.~\cite{zamecnik2017}).
+Der Einfluss dieser Punkte auf Speedup und parallele Effizienz bedürfen zukünftig weiterer Untersuchung.
