@@ -7,7 +7,7 @@
 \usepackage[section,newfloat]{minted}
 \usepackage[super]{nth}
 \usepackage{pgfplots}
-\usepackage{siunitx}
+\usepackage[binary-units]{siunitx}
 \usepackage{tcolorbox}
 
 \input{glossar}
@@ -20,22 +20,14 @@
 
 \newcommand{\lstfont}[1]{\color{#1}\small\ttfamily}
 
-\definecolor{keyword-green}{RGB}{0, 128, 0}
-
 \author{Jan Stephan}
 \title{Texterkennung in topographischen Karten: Untersuchungen mit dem Deep-Learning-Framework Keras in einer
        HPC-Systemumgebung}
 \matno{3755136}
 \betreuer{Dr.\ Peter Winkler}
 \date{28. September 2018}
-% \copyrighterklaerung{Die nachfolgend aufgeführten Wortmarken sind Markenzeichen ihrer jeweiligen Inhaber, auch wenn sie
-%                     im Text dieser Arbeit nicht als solche gekennzeichnet sind. CUDA{\textregistered},
-%                     Quadro{\textregistered} und GeForce{\textregistered} sind eingetragene Markenzeichen der Firma
-%                     NVIDIA. DirectX{\textregistered} ist ein eingetragenes Markenzeichen der Firma Microsoft.
-%                     OpenGL{\texttrademark} und OpenCL{\texttrademark} sind nichteingetragene Markenzeichen der
-%                     Khronos Group. Xeon Phi{\texttrademark} ist ein nichteingetragenes Markenzeichen der Firma Intel.}
 \acknowledgments{Für die tatkräftige Hilfe bei der manuellen Extraktion der Realdaten aus dem Kartenmaterial bedanke ich
-                 mich herzlich bei N. Werner. TODO: Vornamen erfragen}
+                 mich herzlich bei Herrn Niklas Werner vom Zentrum für Informationsdienste und Hochleistungsrechnen.}
 
 \bibfiles{bibliography.bib}
 \def\UrlBreaks{\do\/\do-}
@@ -44,6 +36,8 @@
 \deftranslation[to=German]{Acronyms}{Abkürzungsverzeichnis}
 \deftranslation[to=German]{Glossary}{Glossar}
 \renewcommand*{\listlistingname}{Quelltextverzeichnis}
+
+\sisetup{locale = DE}
 
 \fancyhf{}
 \fancyhead[L]{Jan Stephan -- Texterkennung in topographischen Karten}

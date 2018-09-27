@@ -2,11 +2,26 @@
 
 \subsection{Entwicklungsstand}
 
+Es wurde gezeigt, dass Texterkennung in und -extraktion aus topographischen Karten mit der vorgestellten
+Netzwerkarchitektur möglich ist und gute Erkennungsraten liefert. Vorbedingung dafür ist das Vorliegen einer genügend
+großen Datenmenge für das \textit{Training}, da das Netzwerk ansonsten zu \textit{Overfitting} neigt.
+
+Die Nutzung der Frameworks \textit{Keras} und \textit{TensorFlow} ermöglichte eine einfache Umsetzung für die Nutzung
+der auf dem HPC-System \textit{Taurus} vorhandenen GPUs, auch wenn die Nutzung mehrerer GPUs zur Zeit noch nicht
+optimal funktioniert.
+
 \subsection{Ausblick}
 
-Eine Verbesserung der Ergebnisse ließe sich vermutlich durch eine Verbesserung der \textit{Trainings}-Daten erreichen.
-Insbesondere der Einsatz der Schriftarten \textit{Kursivschrift} und \textit{Roemisch} innerhalb des Datengenerators
-könnte hier messbare Fortschritte erzielen.
+Insbesondere die Gewinnung den historischen Schriftbildern entsprechender \textit{Trainings}-Daten gestaltete sich
+schwierig. In seiner aktuellen Fassung behilft sich der Datengenerator mit aus dem vorliegenden Kartenmaterial
+ausgeschnittenen Einzelbuchstaben, die dann aneinandergereiht werden; die Alternative besteht im mühevollen manuellen
+Ausschneiden der ganzen Wörter, wie es für diese Arbeit für die in Abschnitt~\ref{} erwähnten Validierungsdaten getan
+wurde.
+
+Eine Verbesserung dieser Situation sowie daraus folgend der \textit{Inferenz}-Ergebnisse ließe sich vermutlich durch
+den Einsatz der Schriftarten \textit{Kursivschrift} (vgl.~\cite{kursivschrift}) und \textit{Roemisch}
+(vgl.~\cite{roemisch}) innerhalb des Datengenerators erreichen, da sie den historisch genutzten Schriftarten
+weitestgehend entsprechen.
 
 Ein weiterer Ansatz zur Verbesserung der Erkennungsrate könnte darin liegen, Vorder- und Hintergrund, das heißt Text
 und Karte, voneinander zu trennen und getrennt auszuwerten.

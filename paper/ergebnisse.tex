@@ -1,10 +1,131 @@
 \section{Ergebnisse}
+\label{ergebnisse}
 
-\subsection{Test- und Validierungsdaten}
+\subsection{Erfolgskriterien}
+\label{ergebnisse:erfolg}
 
-\subsection{Test- und Validierungsergebnisse}
+Für die Erfolgsbewertung der \textit{Inferenz} werden in den folgenden Abschnitten zwei \textit{Scores} gebildet: der
+\textit{Wordscore} und der \textit{Charscore}. Der \textit{Wordscore} ist ein binärer Wert und gibt an, ob ein ganzes
+Wort korrekt erkannt wurde. Der \textit{Charscore} wird durch eine Zählung der korrekt erkannten Buchstaben eines
+Wortes ermittelt und ist ein Wert zwischen 0 und 1, wobei 1 die korrekte Erkennung aller Buchstaben an ihrem erwarteten
+Platz bedeutet. Anders ausgedrückt bedeutet ein \textit{Wordscore} von 1 immer einen \textit{Charscore} von 1; ein
+\textit{Charscore} kleiner 1 impliziert immer einen \textit{Wordscore} von 0.
 
-\subsection{Erkennungsraten}
+Beispiele:
+
+\begin{itemize}
+    \item Der Text \glqq Bramel\grqq\ wird korrekt als \glqq Bramel\grqq\ erkannt. \textit{Wordscore} =
+          \textit{Charscore} = 1
+      \item Der Text \glqq Ta\textbf{\color{red}n}nen\grqq\ wird als \glqq Ta\textbf{\color{red}u}nen\grqq\ erkannt.
+          \textit{Wordscore} = 0, \textit{Charscore} = 0.8333
+\end{itemize}
+
+Dieses Verfahren erlaubt eine grobe statistische Auswertung des Lernerfolgs, berücksichtigt jedoch einige Sonderfälle
+nicht.
+
+Beispiel:
+
+\begin{itemize}
+    \item Der Text \glqq Wehdel\grqq\ wird als \glqq NWehdel\grqq\ erkannt. \textit{Wordscore} = \textit{Charscore} = 0
+\end{itemize}
+
+Obwohl der Text \glqq Wehdel\grqq\ in Gänze richtig erkannt wurde, sorgt das falsch erkannte \glqq N\grqq\ am
+Wortbeginn für einen \textit{Wordscore} von 0. Da der \textit{Charscore} nur Buchstaben an ihrem korrekten Platz
+berücksichtigt, diese jedoch durch das \glqq N\grqq\ um eine Position nach rechts verschoben wurden, ist er in diesem
+Beispiel ebenfalls 0.
+
+\subsection{\textit{Overfitting}}
+\label{ergebnisse:overfitting}
+
+Ein generelles Problem des maschinellen Lernens im Allgemeinen sowie der \gls{ctc}-Methode im Besonderen
+(vgl.~\cite{graves2006}, S.\ 376) ist die Frage, wie eine zu große Abhängigkeit des Netzwerks von den
+\textit{Trainings}-Daten vermieden werden kann. Diese \textit{Overfitting} genannte Sichtverengung des Netzwerks sorgt
+zwar für exzellente Ergebnisse, wenn die \textit{Inferenz} auf den \textit{Trainings}-Daten durchgeführt wird,
+verschlechtert jedoch die Erkennungsrate für unbekannte Daten.
+
+Das im Rahmen dieser Arbeit entwickelte Netzwerk ist vor allem bei der Verwendung kleiner \textit{Trainings}-Datensätze
+von \textit{Overfitting} betroffen, wie die in der Tabelle~\ref{} aufgeführten Messergebnisse zeigen. Im weiteren
+Verlauf wurde daher nur mit Datensatzgrößen jenseits von 100.000 Bildern gearbeitet (siehe
+Abschnitt~\ref{ergebnisse:daten}).
+
+TODO: Ergebnisse für kleine Datensätze hier einfügen, wenn SLURM wieder funktioniert
+
+\subsection{Trainings- und Validierungsdaten}
+\label{ergebnisse:daten}
+
+Für das \textit{Training} wurden insgesamt sechs verschiedene Datensätze verwendet, wovon jeweils drei mit dem Präfix
+\texttt{wl6} und drei mit \texttt{wl28} versehen sind. Die \texttt{wl6}-Datensätze werden für das Training eines
+Netzwerks für Texte mit fixer Wortlänge (sechs Buchstaben) verwendet und enthalten Bilder zufälliger Größe. Die
+\texttt{wl28}-Datensätze sind für das Training eines Netzwerks erzeugt worden, welches Wörter mit beliebiger Länge
+zwischen 2 und 8 Buchstaben erkennt. Die Bilder dieser Datensätze haben eine feste Größe von $256 \times 64$ Pixeln
+(vgl.\ Tabelle~\ref{ergebnisse:daten:training}).
+
+Die Validierung erfolgte durch \textit{Inferenz} auf generierten und realen, aus dem vorliegenden Kartenmaterial
+ausgeschnittenen Daten. Diese Datensätze wurden nicht für das \textit{Training} verwendet; ihr Benennungsschema
+entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten:validierung}).
+
+\begin{table}
+    \caption{Trainingsdatensätze}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Name} & \textbf{Bildanzahl} & \textbf{Textlänge} & \textbf{Bildgröße} & \textbf{Datengröße}\\ \hline \hline
+        \texttt{wl6\_120k} & 120.164 & 6 & variabel & \SI{2,3357}{\gibi\byte} \\ \hline
+        \texttt{wl6\_250k} & 250.000 & 6 & variabel & \SI{4,8841}{\gibi\byte} \\ \hline
+        \texttt{wl6\_500k} & 500.000 & 6 & variabel & \SI{9,7756}{\gibi\byte} \\ \hline
+        \texttt{wl28\_120k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
+        \texttt{wl28\_250k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
+        \texttt{wl28\_250k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
+    \end{tabular}
+    \label{ergebnisse:daten:training}
+\end{table}
+
+\begin{table}
+    \caption{Validierungsdatensätze}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{Name} & \textbf{Typ} & \textbf{Bildanzahl} & \textbf{Textlänge} & \textbf{Bildgröße} & \textbf{Datengröße}\\ \hline \hline
+        \texttt{wl6\_1000} & generiert & 1000 & 6 & variabel & \SI{19,4173}{\mebi\byte} \\ \hline
+        \texttt{wl6\_real} & real & 27 & 6 & variabel & \SI{549,5}{\kibi\byte} \\ \hline
+        \texttt{wl28\_1000} & generiert & 1000 & variabel & $256 \times 64$ & \SI{0}{\mebi\byte} \\ \hline
+        \texttt{wl28\_real} & real & TODO & variabel & $256 \times 64$ & \SI{0}{\kibi\byte} \\ \hline
+    \end{tabular}
+    \label{ergebnisse:daten:validierung}
+\end{table}
+
+\subsection{\textit{Scores}, \textit{Losses} und Genauigkeit}
+\label{ergebnisse:scores}
+
+(siehe Tabelle~\ref{ergebnisse:scores:scores})
+
+\begin{table}
+    \caption{Scores}
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{Trainingsdatensatz} & \textbf{Validierungsdatensatz} & $\sum$ \textbf{Wordscore} / Gesamtzahl & \textbf{Charscore} ($\varnothing$)\\ \hline \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_120k} & TODO & TODO \\ \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_1000} & TODO & TODO \\ \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_real} & TODO & TODO \\ \hline
+        \texttt{wl6\_250k} & \texttt{wl6\_250k} & \num{226432/250000} & \num{0,9086} \\ \hline 
+        \texttt{wl6\_250k} & \texttt{wl6\_1000} & \num{759/1000} & \num{0,863} \\ \hline 
+        \texttt{wl6\_250k} & \texttt{wl6\_real} & \num{4/27} & \num{0,4753} \\ \hline 
+        \texttt{wl6\_500k} & \texttt{wl6\_500k} & TODO & TODO \\ \hline 
+        \texttt{wl6\_500k} & \texttt{wl6\_1000} & TODO & TODO \\ \hline 
+        \texttt{wl6\_500k} & \texttt{wl6\_real} & TODO & TODO \\ \hline \hline
+        \texttt{wl28\_120k} & \texttt{wl28\_120k} & TODO & TODO \\ \hline
+        \texttt{wl28\_120k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
+        \texttt{wl28\_120k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
+        \texttt{wl28\_250k} & \texttt{wl28\_250k} & TODO & TODO \\ \hline
+        \texttt{wl28\_250k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
+        \texttt{wl28\_250k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
+        \texttt{wl28\_500k} & \texttt{wl28\_500k} & TODO & TODO \\ \hline
+        \texttt{wl28\_500k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
+        \texttt{wl28\_500k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
+    \end{tabular}
+    \label{ergebnisse:scores:scores}
+\end{table}
 
 \subsection{Performance}
 
@@ -19,8 +140,8 @@ vorgesehenen \textit{Keras}-Befehle (wie in Abschnitt~\ref{daten:taurus:multigpu
 als erwartet. So dauerte das \textit{Training} bei der Nutzung einer einzigen GPU \SI{669}{\second} bei einer
 Datensatzgröße von 90123 Bildern (\SI{7}{\milli\second} pro Schritt). Die Dauer der Verarbeitung des selben Datensatzes
 mit vier GPUs verkürzte sich auf lediglich \SI{515}{\second} (\SI{6}{\milli\second} pro Schritt). Das entspricht einem
-Speedup $S$ von $1,299$ sowie einer parallelen Effizienz $E$ von $0,325$ und liegt somit weit unter den theoretisch
-erreichbaren Werten von $S = 4$ bzw. $E = 1$.
+Speedup $S$ von \num{1,299} sowie einer parallelen Effizienz $E$ von \num{0,325} und liegt somit weit unter den
+theoretisch erreichbaren Werten von $S = 4$ bzw. $E = 1$.
 
 Wie existierende Benchmarks zeigen, ist dies kein inhärentes Problem von Deep-Learning-Netzwerken, der implementierten
 Algorithmen oder des \textit{TensorFlow}-Backends (vgl.~\cite{tensorflowbench}). Wahrscheinlich sind daher zwei
