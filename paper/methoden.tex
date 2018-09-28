@@ -6,9 +6,10 @@
 
 Bevor ein neuronales Netz zum Einsatz gebracht werden kann, muss es mittels realer oder künstlich erzeugter Daten, die
 dem realen Problem möglichst nahe kommen, \textit{trainiert} werden. Im vorliegenden Fall der topographischen Karten
-wäre die Erzeugung einer ausreichend großen, das heißt dem \textit{Overfitting} vorbeugenden realen Datenmenge sehr
-aufwendig, da dies das händische Markieren und Ausschneiden tausender Beispiele erforderte. Es kommen daher für das
-\textit{Training} künstlich erzeugte Daten zum Einsatz.
+wäre die Erzeugung einer ausreichend großen, das heißt dem \textit{Overfitting}
+(vgl.\ Abschnitt~\ref{ergebnisse:overfitting}) vorbeugenden, realen Datenmenge sehr aufwendig, da dies das händische
+Markieren und Ausschneiden tausender Beispiele erforderte. Es kommen daher für das \textit{Training} künstlich erzeugte
+Daten zum Einsatz.
 
 Innerhalb des ScaDS-Projektes lag zur Erzeugung dieser Daten bereits ein Generator vor (vgl.~\cite{schoelzel17}). Dieser
 erzeugt auf leeren Kartenhintergründen mit topographischen Informationen (Bäume, Flüsse, Höhenlinien, etc.) zufällige
@@ -27,7 +28,7 @@ Die mit dem Datengenerator erzeugten Bilder werden vor der Eingabe in das Netzwe
 Größe (Breite: Wortlänge $L$ multipliziert mit 32, Höhe 64) skaliert. Anschließend werden sie in ein Graubild des
 Typs \texttt{float32} umgewandelt und auf Werte zwischen 0 und 1 normalisiert.
 
-Das Bilderkennungsverfahren folgt dem von Shi et al.\ vorgestellten Ansatz (vgl.~\cite{shi2017}). Es wird eine
+Das Bilderkennungsverfahren folgt dem von \textit{Shi et al.}\ vorgestellten Ansatz (vgl.~\cite{shi2017}). Es wird eine
 Hierarchie mehrerer miteinander verbundener \textit{convolutional layer}, \textit{max-pooling layer},
 \textit{batch normalization layer} und schlussendlich eines bidirektionalen \gls{lstm} \textit{layers} erzeugt, an das
 sich ein \textit{fully-connected layer} für die Buchstabenaktivierung anschließt (siehe
@@ -64,18 +65,30 @@ Bis zu diesem Punkt entspricht das \textit{Trainings}-Netzwerk dem \textit{Infer
 \subsection{Textklassifizierung}
 \label{daten:textklassifizierung}
 
-Im Unterschied zur Methode von Shi et al. kommt für die Textklassifizierung bzw.\ -dekodierung kein spezieller
-Algorithmus zum Einsatz, sondern das Verfahren der 2006 von Graves et al.\ entwickelten \gls{ctc}.
+Im Unterschied zur Methode von \textit{Shi et al.}\ kommt für die Textklassifizierung bzw.\ -dekodierung kein spezieller
+Algorithmus zum Einsatz, sondern das Verfahren des 2006 von \textit{Graves et al.}\ entwickelten \gls{ctc}.
 
-Die \gls{ctc}-Methode wurde für die Erkennung nicht-segmentierter sequentieller Daten konzipiert, wie sie beispielsweise
-bei digitalisierten Handschriften, Sprach- oder Gestenaufnahmen vorliegen. Zum damaligen Zeitpunkt war für diese
-Aufgaben die Nutzung eines \gls{hmm} oder \gls{crf} üblich, die jedoch erhebliches Vorwissen über das zu lösende Problem
-voraussetzten und die explizite Definition von Abhängigkeiten verlangten.
+Die \gls{ctc}-Methode wurde für die Erkennung nicht-segmentierter sequentieller Daten konzipiert. In dieser Form liegen
+beispielsweise digitalisierte Handschriften, Sprach- oder Gestenaufnahmen vor, deren einzelne Sequenzschritte sich nicht
+immer eindeutig voneinander abgrenzen lassen: Wann endet bei der Aussprache eines Wortes ein Buchstabe? Wann beginnt der
+nächste? In Schreibschriften, die Wörter in einer einzigen Handbewegung produzieren, lassen sich Anfang und Ende
+konkreter Buchstaben häufig ebenfalls nur schwierig bestimmen.
 
-Die Verwendung eines \gls{rnn} (wie etwa eines \gls{lstm}) zu diesem Zweck erforderte dagegen eine manuelle
-Segmentierung der \textit{Trainings}-Daten sowie eine Nachbearbeitung der Ausgabe (wie beispielsweise Shi eti al.\ sie
-noch durchführen), da die einzelnen von einem \gls{rnn} erzeugten Klassifizierungen voneinander unabhängig sind. Vor der
-Vorstellung der \gls{ctc}-Methode wurden \gls{rnn} daher oft in Verbindung mit \gls{hmm} eingesetzt.
+Zum Zeitpunkt der Vorstellung der \gls{ctc}-Methode war für diese Art von Aufgaben die Nutzung eines \gls{hmm} oder
+\gls{crf} üblich, die jedoch erhebliches Vorwissen über das zu lösende Problem voraussetzten und die explizite
+Definition von Abhängigkeiten verlangten (vgl.~\cite{graves2006}, S.~369).
+
+Die Verwendung eines \gls{rnn} (wie etwa eines \gls{lstm}) zu diesem Zweck erfordert -- abgesehen von der Definition
+der Ein- und Ausgangsformate -- kein weiteres Wissen über das Problem. \gls{rnn} eignen sich darüber hinaus gut für die
+Modellierung von Sequenzen, da sie über einen internen Zustand verfügen. Die damals bekannten auf dem Gebiet des Machine
+Learning verwendeten Zielfunktionen (Loss-Funktionen) mussten jedoch für jeden Punkt der Sequenz bzw.\ Zeitschritt
+separat definiert werden. Dies hatte zur Folge, dass \gls{rnn} nur darauf trainiert werden konnten, voneinander gänzlich
+unabhängige Klassifizierungen vorzunehmen. Die \textit{Trainings}-Daten mussten daher manuell segmentiert und die 
+Ausgabe nachbearbeitet werden (vgl.~\cite{graves2006}, S.~369). 
+
+Ein damals weit verbreiteter Ansatz bestand darin, \gls{rnn} mit \gls{hmm} zu kombinieren: \gls{hmm} können die
+Sequenzen während des \textit{Trainings} automatisch segmentieren sowie die Ausgabe der \gls{rnn} verarbeiten. Dieses
+\textit{hybride} System erbte jedoch die oben erwähnten Nachteile von \gls{hmm} (vgl.~\cite{graves2006}, S.~369 - 370).
 
 Dagegen ermöglicht die \gls{ctc}-Methode die Zuordnung von \textit{Labels} zu nicht-segmentierten Eingabesequenzen.
 Dadurch ist sie für Anwendungsfälle, die eine solche Segmentierung nicht brauchen (wie etwa der Erkennung von
@@ -83,8 +96,8 @@ Handschriften, bei der die Abgrenzung zwischen Buchstaben mitunter schwierig ist
 für Probleme, die eine solche Segmentierung voraussetzen (z.B.\ die Voraussage von Proteinstrukturen) weniger geeignet.
 (vgl.~\cite{graves2006})
 
-Im vorliegenden Problem der topographischen Karten wurde die \gls{ctc}-Methode vor allem ausgewählt, um dem mitunter
-schreibschriftartigen Charakter historischer Schriftarten zu begegnen. \textit{Keras} selbst bietet keine
+Im vorliegenden Problem der topographischen Karten wurde die \gls{ctc}-Methode vor allem deshalb ausgewählt, um dem
+mitunter schreibschriftartigen Charakter historischer Schriftarten zu begegnen. \textit{Keras} selbst bietet keine
 Implementierung der \gls{ctc}-Methode, jedoch ist sie über das \textit{TensorFlow}-Backend nutzbar.
 
 Ab diesem Punkt besteht ein Unterschied zwischen dem \textit{Trainings}- und dem \textit{Inferenz}-Netzwerk. An den
@@ -194,7 +207,7 @@ das vorgestellte Netz an einigen im Folgenden aufgeführten Punkten geändert we
 
 \begin{itemize}
     \item Die zu erkennende Wortlänge wurde auf zwei bis acht Buchstaben festgesetzt. Eine spätere Erweiterung auf
-          längere Wörter ist prinzipiell möglich.
+          längere Wörter ist unkompliziert möglich.
     \item Die Nutzung von \gls{lstm}-Schichten erfordert die vorherige Festsetzung der Dimensionen der eingehenden
           Daten. Die zu verarbeitenden Bilder werden deshalb auf eine Breite von 256 Pixeln und eine Höhe von 64 Pixeln
           normiert. Die Umwandlung in \texttt{float32}-Greyscale-Bilder bleibt davon unberührt.
@@ -240,43 +253,3 @@ auch bei der Anfertigung dieser Arbeit zum Einsatz. Sie befindet sich auf dem \t
 ScaDS-Projektverzeichnis unter dem folgenden Pfad:
 
 \texttt{/projects/p\_scads/keras/new\_venv2}
-
-\subsubsection{Nutzung mehrerer GPUs}
-\label{daten:taurus:multigpu}
-
-Die Dauer des \textit{Trainings} kann -- abhängig von der konkreten Netzwerkkonfiguration und der Datenmenge -- mitunter
-sehr viel Zeit in Anspruch nehmen, bis hin zu mehreren Tagen. Es liegt deshalb nahe, den benötigten Zeitaufwand durch
-die Erhöhung des Parallelisierungsgrades zu verringern.
-
-Das \textit{Keras}-Framework unterstützt in Verbindung mit dem \textit{TensorFlow}-Backend die parallele Nutzung
-mehrerer GPUs. Dazu wird das Netz zuerst im Arbeitsspeicher der CPU angelegt und dann auf die vorhandenen GPUs verteilt.
-Das so entstandene \texttt{multi\_gpu\_model} kann in der Folge wie ein normales \textit{Keras}-Modell verwendet werden
-(siehe Quelltext~\ref{daten:taurus:multigpu:source}).
-
-\begin{code}
-\begin{minted}{python}
-import tensorflow as tf
-# ...
-
-from keras.utils.multi_gpu_utils import multi_gpu_model
-# ...
-
-# Keras-Beschränkung: gpu_num muss ein Vielfaches von 2 sein
-if (gpu_num >= 2) and (num_gpu % 2 == 0):
-    with tf.device('/cpu:0'):
-        cpu_model = Model(inputs = [input_data, labels,
-                                    time_steps, label_length],
-                          outputs = [loss_out])
-    model = multi_gpu_model(cpu_model, gpu_num)
-else:
-    # Standardfall: gpu_num <= 1 oder ungerade
-    model = Model(inputs = [input_data, labels,
-                            time_steps, label_length],
-                  outputs = [loss_out])
-
-model.compile(...)
-model.fit(...)
-\end{minted}
-\captionof{listing}{Nutzung mehrerer GPUs mit \textit{Keras}}
-\label{daten:taurus:multigpu:source}
-\end{code}

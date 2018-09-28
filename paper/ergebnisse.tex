@@ -1,23 +1,21 @@
 \section{Ergebnisse}
 \label{ergebnisse}
 
-\subsection{Erfolgskriterien}
+\subsection{Erkennungsrate}
 \label{ergebnisse:erfolg}
 
-Für die Erfolgsbewertung der \textit{Inferenz} werden in den folgenden Abschnitten zwei \textit{Scores} gebildet: der
-\textit{Wordscore} und der \textit{Charscore}. Der \textit{Wordscore} ist ein binärer Wert und gibt an, ob ein ganzes
-Wort korrekt erkannt wurde. Der \textit{Charscore} wird durch eine Zählung der korrekt erkannten Buchstaben eines
-Wortes ermittelt und ist ein Wert zwischen 0 und 1, wobei 1 die korrekte Erkennung aller Buchstaben an ihrem erwarteten
-Platz bedeutet. Anders ausgedrückt bedeutet ein \textit{Wordscore} von 1 immer einen \textit{Charscore} von 1; ein
-\textit{Charscore} kleiner 1 impliziert immer einen \textit{Wordscore} von 0.
+Für die Bestimmung der Erkennungsrate der \textit{Inferenz} werden in den folgenden Abschnitten zwei \textit{Scores}
+gebildet: der \textit{Wordscore} $W$ und der \textit{Charscore} $C$. $W$ ist ein binärer Wert und gibt an, ob ein ganzes
+Wort korrekt erkannt wurde. $C$ errechnet sich aus der Anzahl der korrekt erkannten Buchstaben geteilt durch die
+Gesamtzahl der Buchstaben des Wortes. Anders ausgedrückt bedeutet $W = 1$ immer $C = 1$; $C < 1$ impliziert immer
+$W = 0$.
 
 Beispiele:
 
 \begin{itemize}
-    \item Der Text \glqq Bramel\grqq\ wird korrekt als \glqq Bramel\grqq\ erkannt. \textit{Wordscore} =
-          \textit{Charscore} = 1
-      \item Der Text \glqq Ta\textbf{\color{red}n}nen\grqq\ wird als \glqq Ta\textbf{\color{red}u}nen\grqq\ erkannt.
-          \textit{Wordscore} = 0, \textit{Charscore} = 0.8333
+    \item Der Text \glqq Bramel\grqq\ wird korrekt als \glqq Bramel\grqq\ erkannt. $W = C = 1$
+    \item Der Text \glqq Ta\textbf{\color{red}n}nen\grqq\ wird als \glqq Ta\textbf{\color{red}u}nen\grqq\ erkannt.
+          $W = 0$, $C = 0.8333$
 \end{itemize}
 
 Dieses Verfahren erlaubt eine grobe statistische Auswertung des Lernerfolgs, berücksichtigt jedoch einige Sonderfälle
@@ -26,7 +24,7 @@ nicht.
 Beispiel:
 
 \begin{itemize}
-    \item Der Text \glqq Wehdel\grqq\ wird als \glqq NWehdel\grqq\ erkannt. \textit{Wordscore} = \textit{Charscore} = 0
+    \item Der Text \glqq Wehdel\grqq\ wird als \glqq NWehdel\grqq\ erkannt. $W = C = 0$
 \end{itemize}
 
 Obwohl der Text \glqq Wehdel\grqq\ in Gänze richtig erkannt wurde, sorgt das falsch erkannte \glqq N\grqq\ am
@@ -44,25 +42,79 @@ zwar für exzellente Ergebnisse, wenn die \textit{Inferenz} auf den \textit{Trai
 verschlechtert jedoch die Erkennungsrate für unbekannte Daten.
 
 Das im Rahmen dieser Arbeit entwickelte Netzwerk ist vor allem bei der Verwendung kleiner \textit{Trainings}-Datensätze
-von \textit{Overfitting} betroffen, wie die in der Tabelle~\ref{} aufgeführten Messergebnisse zeigen. Im weiteren
-Verlauf wurde daher nur mit Datensatzgrößen jenseits von 100.000 Bildern gearbeitet (siehe
-Abschnitt~\ref{ergebnisse:daten}).
+von \textit{Overfitting} betroffen, wie die in der Abbildung~\ref{ergebnisse:overfitting:messung} dargestellten
+Messergebnisse zeigen. Als \textit{Trainings}-Grundlage dienen hier Datensätze mit \num{1000} bzw.\ \num{10000} Bildern,
+der Loss sowie der Validierungs-Loss wurden automatisch durch \textit{Keras} ermittelt. In beiden Fällen ist anhand des
+zunächst fallenden, dann steigenden Validierungs-Loss zu erkennen, dass das Netzwerk schon nach wenigen Epochen zu
+\textit{Overfitting} neigt. Im weiteren Verlauf wurde daher nur mit Datensatzgrößen von mehr als \num{100000} Bildern
+gearbeitet (siehe Abschnitt~\ref{ergebnisse:daten}).
 
-TODO: Ergebnisse für kleine Datensätze hier einfügen, wenn SLURM wieder funktioniert
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title = {Loss-Entwicklung für \num{1000} Bilder},
+            xlabel = {Epochen},
+            ylabel = {Loss},
+            xmin = 0, xmax = 24,
+            ymin = 0, ymax = 36,
+            xtick = {0, 3, 6, 9, 12, 15, 18, 21, 24},
+            ytick = {0, 6, 12, 18, 24, 30, 36},
+            ymajorgrids = true,
+            xmajorgrids = true,
+            grid style = dashed,
+            legend pos = south west,
+            no markers
+        ]
+
+                \addplot table [x = epoch, y = loss, col sep = semicolon]{loss_1000.csv};
+                \addlegendentry{loss};
+
+                \addplot table [x = epoch, y = val_loss, col sep = semicolon]{loss_1000.csv};    
+                \addlegendentry{val\_loss};
+        \end{axis}
+    \end{tikzpicture}
+
+    \begin{tikzpicture}
+        \begin{axis}[
+            title = {Loss-Entwicklung für \num{10000} Bilder},
+            xlabel = {Epochen},
+            ylabel = {Loss},
+            xmin = 0, xmax = 24,
+            ymin = 0, ymax = 30,
+            xtick = {0, 3, 6, 9, 12, 15, 18, 21, 24},
+            ytick = {0, 6, 12, 18, 24, 30},
+            ymajorgrids = true,
+            xmajorgrids = true,
+            grid style = dashed,
+            legend pos = south west,
+            no markers
+        ]
+
+                \addplot table [x = epoch, y = loss, col sep = semicolon]{loss_10k.csv};
+                \addlegendentry{loss};
+
+                \addplot table [x = epoch, y = val_loss, col sep = semicolon]{loss_10k.csv};    
+                \addlegendentry{val\_loss};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Loss und Genauigkeit für das Training mit kleinen Datensätzen\label{ergebnisse:overfitting:messung}}
+\end{figure}
 
 \subsection{Trainings- und Validierungsdaten}
 \label{ergebnisse:daten}
 
-Für das \textit{Training} wurden insgesamt sechs verschiedene Datensätze verwendet, wovon jeweils drei mit dem Präfix
-\texttt{wl6} und drei mit \texttt{wl28} versehen sind. Die \texttt{wl6}-Datensätze werden für das Training eines
+Für das \textit{Training} wurden insgesamt vier verschiedene Datensätze verwendet, wovon jeweils zwei mit dem Präfix
+\texttt{wl6} und zwei mit \texttt{wl28} versehen sind. Die \texttt{wl6}-Datensätze werden für das Training eines
 Netzwerks für Texte mit fixer Wortlänge (sechs Buchstaben) verwendet und enthalten Bilder zufälliger Größe. Die
 \texttt{wl28}-Datensätze sind für das Training eines Netzwerks erzeugt worden, welches Wörter mit beliebiger Länge
 zwischen 2 und 8 Buchstaben erkennt. Die Bilder dieser Datensätze haben eine feste Größe von $256 \times 64$ Pixeln
 (vgl.\ Tabelle~\ref{ergebnisse:daten:training}).
 
-Die Validierung erfolgte durch \textit{Inferenz} auf generierten und realen, aus dem vorliegenden Kartenmaterial
-ausgeschnittenen Daten. Diese Datensätze wurden nicht für das \textit{Training} verwendet; ihr Benennungsschema
-entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten:validierung}).
+Die Validierung erfolgte durch \textit{Inferenz} in drei Schritten: zunächst auf dem Trainingsdatensatz, dann auf einem
+generierten, vom Trainingsdatensatz verschiedenen Validierungsdatensatz und schließlich auf realen, aus dem vorliegenden
+Kartenmaterial ausgeschnittenen Daten. Das Benennungsschema der künstlichen und realen Validierungsdatensätze entspricht
+dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten:validierung}).
 
 \begin{table}
     \caption{Trainingsdatensätze}
@@ -70,12 +122,10 @@ entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten
     \begin{tabular}{|c|c|c|c|c|}
         \hline
         \textbf{Name} & \textbf{Bildanzahl} & \textbf{Textlänge} & \textbf{Bildgröße} & \textbf{Datengröße}\\ \hline \hline
-        \texttt{wl6\_120k} & 120.164 & 6 & variabel & \SI{2,3357}{\gibi\byte} \\ \hline
-        \texttt{wl6\_250k} & 250.000 & 6 & variabel & \SI{4,8841}{\gibi\byte} \\ \hline
-        \texttt{wl6\_500k} & 500.000 & 6 & variabel & \SI{9,7756}{\gibi\byte} \\ \hline
-        \texttt{wl28\_120k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
-        \texttt{wl28\_250k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
-        \texttt{wl28\_250k} & TODO & variabel & $256 \times 64$ & \SI{0}{\gibi\byte} \\ \hline
+        \texttt{wl6\_120k} & \num{120164} & \num{6} & variabel & \SI{2,3357}{\gibi\byte} \\ \hline
+        \texttt{wl6\_250k} & \num{250000} & \num{6} & variabel & \SI{4,8841}{\gibi\byte} \\ \hline
+        \texttt{wl28\_120k} & \num{120164} & variabel & $256 \times 64$ & \SI{605,5155}{\mebi\byte} \\ \hline
+        \texttt{wl28\_250k} & \num{250000} & variabel & $256 \times 64$ & \SI{1,2297}{\gibi\byte} \\ \hline
     \end{tabular}
     \label{ergebnisse:daten:training}
 \end{table}
@@ -86,10 +136,10 @@ entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten
     \begin{tabular}{|c|c|c|c|c|c|}
         \hline
         \textbf{Name} & \textbf{Typ} & \textbf{Bildanzahl} & \textbf{Textlänge} & \textbf{Bildgröße} & \textbf{Datengröße}\\ \hline \hline
-        \texttt{wl6\_1000} & generiert & 1000 & 6 & variabel & \SI{19,4173}{\mebi\byte} \\ \hline
-        \texttt{wl6\_real} & real & 27 & 6 & variabel & \SI{549,5}{\kibi\byte} \\ \hline
-        \texttt{wl28\_1000} & generiert & 1000 & variabel & $256 \times 64$ & \SI{0}{\mebi\byte} \\ \hline
-        \texttt{wl28\_real} & real & TODO & variabel & $256 \times 64$ & \SI{0}{\kibi\byte} \\ \hline
+        \texttt{wl6\_1000} & generiert & \num{1000} & \num{6} & variabel & \SI{19,4173}{\mebi\byte} \\ \hline
+        \texttt{wl6\_real} & real & \num{27} & \num{6} & variabel & \SI{549,5}{\kibi\byte} \\ \hline
+        \texttt{wl28\_1000} & generiert & \num{1000} & variabel & $256 \times 64$ & \SI{5,0363}{\mebi\byte} \\ \hline
+        \texttt{wl28\_real} & real & \num{180} & variabel & $256 \times 64$ & \SI{4,4124}{\mebi\byte} \\ \hline
     \end{tabular}
     \label{ergebnisse:daten:validierung}
 \end{table}
@@ -97,7 +147,13 @@ entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten
 \subsection{\textit{Scores}, \textit{Losses} und Genauigkeit}
 \label{ergebnisse:scores}
 
-(siehe Tabelle~\ref{ergebnisse:scores:scores})
+Alle der im Folgenden präsentierten Ergebnisse wurden mit Netzwerken erzielt, die auf ihren jeweiligen Datensätzen über
+25 Epochen \textit{trainiert} wurden.
+
+Die in Tabelle~\ref{ergebnisse:scores:scores} (visualisiert in Abbildung~\ref{ergebnisse:scores:scoresviz} für die fixe
+Wortlänge ermittelten Ergebnisse zeigen, dass das Netzwerk einer größeren Datenmenge profitiert. Durch den Sprung vom
+Datensatz \texttt{wl6\_120k} auf \texttt{wl6\_250k} werden für alle Validierungsdatensätze deutlich bessere Ergebnisse
+erzielt.
 
 \begin{table}
     \caption{Scores}
@@ -105,56 +161,64 @@ entspricht dem der \textit{Trainings}-Daten (vgl.\ Tabelle~\ref{ergebnisse:daten
     \begin{tabular}{|c|c|c|c|}
         \hline
         \textbf{Trainingsdatensatz} & \textbf{Validierungsdatensatz} & $\sum$ \textbf{Wordscore} / Gesamtzahl & \textbf{Charscore} ($\varnothing$)\\ \hline \hline
-        \texttt{wl6\_120k} & \texttt{wl6\_120k} & TODO & TODO \\ \hline
-        \texttt{wl6\_120k} & \texttt{wl6\_1000} & TODO & TODO \\ \hline
-        \texttt{wl6\_120k} & \texttt{wl6\_real} & TODO & TODO \\ \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_120k} & \num{80824/120164} & \num{0,6819} \\ \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_1000} & \num{661/1000} & \num{0,6685} \\ \hline
+        \texttt{wl6\_120k} & \texttt{wl6\_real} & \num{1/27} & \num{0,3889} \\ \hline
         \texttt{wl6\_250k} & \texttt{wl6\_250k} & \num{226432/250000} & \num{0,9086} \\ \hline 
-        \texttt{wl6\_250k} & \texttt{wl6\_1000} & \num{759/1000} & \num{0,863} \\ \hline 
-        \texttt{wl6\_250k} & \texttt{wl6\_real} & \num{4/27} & \num{0,4753} \\ \hline 
-        \texttt{wl6\_500k} & \texttt{wl6\_500k} & TODO & TODO \\ \hline 
-        \texttt{wl6\_500k} & \texttt{wl6\_1000} & TODO & TODO \\ \hline 
-        \texttt{wl6\_500k} & \texttt{wl6\_real} & TODO & TODO \\ \hline \hline
-        \texttt{wl28\_120k} & \texttt{wl28\_120k} & TODO & TODO \\ \hline
-        \texttt{wl28\_120k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
-        \texttt{wl28\_120k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
+        \texttt{wl6\_250k} & \texttt{wl6\_1000} & \num{759/1000} & \num{0,8630} \\ \hline 
+        \texttt{wl6\_250k} & \texttt{wl6\_real} & \num{4/27} & \num{0,4753} \\ \hline \hline 
+        \texttt{wl28\_120k} & \texttt{wl28\_120k} & \num{11498/120164} & \num{0,1902} \\ \hline
+        \texttt{wl28\_120k} & \texttt{wl28\_1000} & \num{21/1000} & \num{0,1288} \\ \hline
+        \texttt{wl28\_120k} & \texttt{wl28\_real} & \num{0/181} & \num{0,0146} \\ \hline
         \texttt{wl28\_250k} & \texttt{wl28\_250k} & TODO & TODO \\ \hline
         \texttt{wl28\_250k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
         \texttt{wl28\_250k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
-        \texttt{wl28\_500k} & \texttt{wl28\_500k} & TODO & TODO \\ \hline
-        \texttt{wl28\_500k} & \texttt{wl28\_1000} & TODO & TODO \\ \hline
-        \texttt{wl28\_500k} & \texttt{wl28\_real} & TODO & TODO \\ \hline
     \end{tabular}
     \label{ergebnisse:scores:scores}
 \end{table}
 
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title = {\textit{Charscores} -- fixe Wortlänge},
+            ylabel = {Charscore ($\varnothing$)},
+            ymin = 0, ymax = 1,
+            ytick = {0, 0.2, 0.4, 0.6, 0.8, 1},
+            ymajorgrids = true,
+            grid style = dashed,
+            legend pos = north west,
+            symbolic x coords = {Training, wl6\_1000, wl6\_real},
+            xtick = data,
+            ybar
+        ]
+
+            \addplot coordinates {(Training, 0.6819) (wl6\_1000, 0.6685) (wl6\_real, 0.3889)};
+            \addplot coordinates {(Training, 0.9086) (wl6\_1000, 0.863) (wl6\_real, 0.4753)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Charscores für verschiedene \textit{Trainings}-Datensatzgrößen\label{ergebnisse:scores:scoresviz}}
+\end{figure}
+
 \subsection{Performance}
 
+Neben den erzielten Ergebnissen ist für die Nutzung auf einem HPC-System auch die Ausführungsgeschwindigkeit von
+Interesse. Diese soll in den folgenden Abschnitten näher betrachtet werden.
+
 \subsubsection{\textit{Training}}
+\label{ergebnisse:performance:training}
+
+Aufgrund der großen Datenmengen und der Komplexität des Netzwerks dauert das \textit{Training} -- abhängig vom konkreten
+Datensatz -- mehrere Stunden (siehe Tabelle~\ref{ergebnisse:performance:training:laufzeit}).
+
+\begin{table}
+    \caption{\textit{Trainings}-Laufzeiten}
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Trainingsdatensatz} & \textbf{Gesamtlaufzeit} & \textbf{Epochenlaufzeit} \\ \hline \hline
+    \end{tabular}
+    \label{ergebnisse:performance:training:laufzeit}
+\end{table}
 
 \subsubsection{\textit{Inferenz}}
-
-\subsubsection{Nutzung mehrerer GPUs}
-
-Der beabsichtigte Geschwindigkeitszuwachs beim \textit{Training} durch die Nutzung der für die Verwendung mehrerer GPUs
-vorgesehenen \textit{Keras}-Befehle (wie in Abschnitt~\ref{daten:taurus:multigpu} beschrieben) fiel deutlich kleiner aus
-als erwartet. So dauerte das \textit{Training} bei der Nutzung einer einzigen GPU \SI{669}{\second} bei einer
-Datensatzgröße von 90123 Bildern (\SI{7}{\milli\second} pro Schritt). Die Dauer der Verarbeitung des selben Datensatzes
-mit vier GPUs verkürzte sich auf lediglich \SI{515}{\second} (\SI{6}{\milli\second} pro Schritt). Das entspricht einem
-Speedup $S$ von \num{1,299} sowie einer parallelen Effizienz $E$ von \num{0,325} und liegt somit weit unter den
-theoretisch erreichbaren Werten von $S = 4$ bzw. $E = 1$.
-
-Wie existierende Benchmarks zeigen, ist dies kein inhärentes Problem von Deep-Learning-Netzwerken, der implementierten
-Algorithmen oder des \textit{TensorFlow}-Backends (vgl.~\cite{tensorflowbench}). Wahrscheinlich sind daher zwei
-Ursachen ausschlaggebend:
-
-\begin{enumerate}
-    \item \textit{Keras'} \texttt{multi\_gpu\_model} könnte laut einiger Hinweise der Nutzergemeinschaft nicht sehr gut
-          implementiert sein - unter anderem wird mangelnde Überlappung zwischen Speichertransfers und Berechnungen auf
-          der GPU beklagt. Dieses Problem soll sich durch direkten Zugriff auf die \textit{TensorFlow}-API umgehen
-          lassen (vgl.~\cite{zamecnik2017}).
-    \item \textit{TensorFlows} \gls{ctc}-Implementierung kann in Ermangelung einer entsprechenden Implementierung nicht
-          von der Beschleunigung durch GPUs profitieren; eine zeitnahe Umsetzung ist derzeit (26.\ September 2018) nicht
-          in Sicht (vgl.~\cite{hibbert2016}).
-\end{enumerate}
-
-Der Einfluss dieser Punkte auf Speedup und parallele Effizienz bedürfen zukünftig weiterer Untersuchung.
