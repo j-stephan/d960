@@ -196,32 +196,8 @@ decodeds = ctc_decode(predictions)
 \label{daten:textklassifizierung:inferenz}
 \end{code}
 
-\subsection{Fixe und variable Wortlängen}
-\label{daten:wortlaenge}
-
-Der in den vorherigen Abschnitten vorgestellte Netzaufbau zur Bilderkennung und Textklassifizierung ist in der
-beschriebenen Form nur auf Bilder anwendbar, deren enthaltene Texte alle über die gleiche Anzahl an Buchstaben
-verfügen. Da es unter Realbedingungen äußerst unwahrscheinlich ist, nur auf Orts- und Flurbezeichnungen der selben
-Wortlänge zu treffen, ist die Anwendbarkeit auf unterschiedliche Wortlängen ein wichtiges Ziel. Zu diesem Zweck muss
-das vorgestellte Netz an einigen im Folgenden aufgeführten Punkten geändert werden:
-
-\begin{itemize}
-    \item Die zu erkennende Wortlänge wurde auf zwei bis acht Buchstaben festgesetzt. Eine spätere Erweiterung auf
-          längere Wörter ist unkompliziert möglich.
-    \item Die Nutzung von \gls{lstm}-Schichten erfordert die vorherige Festsetzung der Dimensionen der eingehenden
-          Daten. Die zu verarbeitenden Bilder werden deshalb auf eine Breite von 256 Pixeln und eine Höhe von 64 Pixeln
-          normiert. Die Umwandlung in \texttt{float32}-Greyscale-Bilder bleibt davon unberührt.
-    \item Die \gls{ctc}-Methode benötigt keine weitere Anpassung, da diese prinzipbedingt mit Sequenzen beliebiger
-          Länge umgehen kann.
-\end{itemize}
-
 \subsection{Umsetzung auf dem HPC-System \textit{Taurus}}
 \label{daten:taurus}
-
-Zur Ausführung der Python-Skripte für \textit{Training} und \textit{Inferenz} auf dem zur TU Dresden gehörigen
-HPC-System \textit{Taurus} ist das Laden der im Abschnitt~\ref{daten:taurus:module} genannten Module nötig. Die Nutzung
-mehrerer GPUs erfordert kleinere Anpassungen am Quelltext der Skripte, die in Abschnitt~\ref{daten:taurus:multigpu}
-aufgeführt werden.
 
 \subsubsection{Verwendete Hardware}
 \label{daten:taurus:hardware}

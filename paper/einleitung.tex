@@ -41,28 +41,28 @@ herausfordernden und interessanten Aufgabe im Bereich des maschinellen Lernens.
 \label{einleitung:forschung}
 
 Die Idee der maschinellen \gls{ocr} beschäftigt Ingenieure, Informatiker und Erfinder seit mehr als einem Jahrhundert.
-Bereits 1914 stellte Edmund Fournier d'Albe ein \textit{Optophon} vor, das nach Erkennung eines Buchstabens einen
-bestimmten Ton abspielte und auf diese Weise Blinden das Lesen ermöglichen sollte (vgl.~\cite{albe1914}). Wenige Jahre
-später meldete der in Dresden bei der Firma \textit{Zeiss Ikon} tätige Emanuel Goldberg ein Patent für die von ihm
-entwickelte \glqq statistische Maschine\grqq\ an, mit deren Hilfe die in Form von Buchstaben- und Ziffernkombinationen
-vorliegenden Metadaten auf Filmrollen durchsucht werden konnten (vgl.~\cite{goldberg1931}).
+Bereits 1914 stellte \textit{Edmund Fournier d'Albe} ein \textit{Optophon} vor, das nach Erkennung eines Buchstabens
+einen bestimmten Ton abspielte und auf diese Weise Blinden das Lesen ermöglichen sollte (vgl.~\cite{albe1914}). Wenige
+Jahre später meldete der in Dresden bei der Firma \textit{Zeiss Ikon} tätige \textit{Emanuel Goldberg} ein Patent für
+die von ihm entwickelte \glqq statistische Maschine\grqq\ an, mit deren Hilfe die in Form von Buchstaben- und
+Ziffernkombinationen vorliegenden Metadaten auf Filmrollen durchsucht werden konnten (vgl.~\cite{goldberg1931}).
 
 In jüngerer Zeit ist die \gls{ocr} im Bereich des maschinellen Lernens häufiger untersucht worden. Eines der
 bekanntesten Projekte in diesem Bereich ist die zunächst von der Firma \textit{Hewlett-Packard}, dann von der Firma
 \textit{Google} entwickelte \textit{Tesseract OCR Engine} (vgl.~\cite{smith2007}), die mittlerweile neben
 algorithmusbasierter Texterkennung den Einsatz eines neuronalen Netzes ermöglicht (vgl.~\cite{tesseract40}).
 
-Jaderberg et al.\ präsentierten 2016 ein mehrstufiges Verfahren für die Texterkennung in Fotografien. Bei diesem
-Verfahren wird zunächst die mögliche Existenz eines Texts in einem Bild \textit{entdeckt}. Alle Entdeckungen eines
-Bildes werden der nächsten Stufe als Vorschläge präsentiert. Diese versucht dann, innerhalb der Vorschläge Text zu
+\textit{Jaderberg et al.}\ präsentierten 2016 ein mehrstufiges Verfahren für die Texterkennung in Fotografien. Bei
+diesem Verfahren wird zunächst die mögliche Existenz eines Texts in einem Bild \textit{entdeckt}. Alle Entdeckungen
+eines Bildes werden der nächsten Stufe als Vorschläge präsentiert. Diese versucht dann, innerhalb der Vorschläge Text zu
 \textit{erkennen}. Grundlage des Netzes ist eine Hierarchie mehrerer mit einander verbundener
 \textit{convolutional layer}, an deren Ende ein \textit{fully connected layer} steht, welches die erkannten Buchstaben
 ausgibt (\textit{aktiviert}) (vgl.~\cite{jaderberg2016}).
 
-Shi et al.\ stellten 2017 ein Netzwerk vor, welches ebenfalls der Texterkennung in Fotografien dienen sollte. Wie
-Jaderberg et al.\ setzen sie zunächst auf eine Hierarchie mehrerer verbundener \textit{convolutional layer}, fügen
-jedoch vor der Buchstabenaktivierung \gls{lstm} \textit{layer} ein, deren Ausgabe später durch einen handgeschriebenen
-Algorithmus dekodiert wird. (vgl.~\cite{shi2017})
+\textit{Shi et al.}\ stellten 2017 ein Netzwerk vor, welches ebenfalls der Texterkennung in Fotografien dienen sollte.
+Wie \textit{Jaderberg et al.}\ setzen sie zunächst auf eine Hierarchie mehrerer verbundener
+\textit{convolutional layer}, fügen jedoch vor der Buchstabenaktivierung \gls{lstm} \textit{layer} ein, deren Ausgabe
+später durch einen handgeschriebenen Algorithmus dekodiert wird. (vgl.~\cite{shi2017})
 
 \subsection{Zielstellung}
 \label{einleitung:zielstellung}
